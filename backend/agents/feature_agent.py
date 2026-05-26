@@ -27,10 +27,18 @@ class FeatureAgent:
 
         df=FeatureTools.handle_missing(
             df
-        )       
+        )    
+
+        df = FeatureTools.encode_target(
+            df,
+            target
+        )   
+
+        df = FeatureTools.normalize_categories(
+            df
+        )
 
         for step in steps:
-
 
             if step=="encoding":
 
@@ -43,6 +51,22 @@ class FeatureAgent:
             elif step=="scaling":
 
                 df=FeatureTools.scale(
+                    df,
+                    target
+                )
+
+
+            elif step=="smote":
+
+                df=FeatureTools.apply_smote(
+                    df,
+                    target
+                )
+
+
+            elif step=="pca":
+
+                df=FeatureTools.apply_pca(
                     df,
                     target
                 )

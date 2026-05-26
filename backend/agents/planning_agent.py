@@ -23,15 +23,24 @@ Task:
 
 {task}
 
-Choose from:
+Rules:
 
-- missing_values
-- encoding
-- scaling
-- smote
-- date_features
-- lag_features
-- pca
+- Classification:
+    encoding
+    scaling
+    smote (if imbalance exists)
+
+- Regression:
+    encoding
+    scaling
+
+- Forecasting:
+    date_features
+
+- PCA:
+    only if feature count > 8
+
+Return steps only
 
 """
 

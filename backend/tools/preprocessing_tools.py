@@ -1,6 +1,7 @@
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler
-
+from imblearn.over_sampling import SMOTE
+from sklearn.decomposition import PCA
 import pandas as pd
 
 
@@ -114,36 +115,47 @@ class FeatureTools:
 
 
     @staticmethod
-    def scale(
-        df,
-        target
-    ):
+    def scale(df, target):
 
-        y=df[target]
+        y = df[target]
 
-        X=df.drop(
+        X = df.drop(
             columns=[target]
         )
 
-        numerical=(
-            X.select_dtypes(
-                include=['number']
+        scaler = StandardScaler()
+
+        numerical = X.select_dtypes(
+            include=['number']
+        )
+
+        cols_to_scale=[]
+
+        for col in numerical.columns:
+
+            # Ignore binary columns
+            unique_count=(
+                X[col]
+                .nunique()
             )
-        )
 
-        scaler=(
-            StandardScaler()
-        )
+            if unique_count > 2:
 
-        X[
-        numerical.columns
-        ]=(
+                cols_to_scale.append(
+                    col
+                )
 
-        scaler.fit_transform(
-        numerical
-        )
+        if cols_to_scale:
 
-        )
+            X[
+                cols_to_scale
+            ]=(
+                scaler.fit_transform(
+                    X[
+                        cols_to_scale
+                    ]
+                )
+            )
 
         X[target]=y
 
@@ -197,3 +209,99 @@ class FeatureTools:
                 )
 
         return df
+    
+
+    @staticmethod
+    def apply_smote(df, target):
+
+        y = df[target]
+
+        X = df.drop(
+            columns=[target]
+        )
+
+        # SMOTE only for binary/multiclass targets
+        if y.nunique() < 2:
+            return df
+
+        try:
+
+            smote = SMOTE(
+                random_state=42
+            )
+
+            X_resampled, y_resampled = (
+                smote.fit_resample(
+                    X,
+                    y
+                )
+            )
+
+            new_df = X_resampled.copy()
+
+            new_df[target] = y_resampled
+
+            return new_df
+
+        except Exception as e:
+
+            print(
+                f"SMOTE skipped: {e}"
+            )
+
+            return df
+        
+    @staticmethod
+    def apply_pca(df,target):
+
+        y=df[target]
+
+        X=df.drop(
+            columns=[target]
+        )
+
+        # Only apply if many features exist
+        if X.shape[1] < 8:
+
+            return df
+
+        try:
+
+            pca=PCA(
+                n_components=0.95
+            )
+
+            X_pca=(
+                pca.fit_transform(
+                    X
+                )
+            )
+
+            cols=[
+
+                f"PC{i+1}"
+
+                for i in range(
+                    X_pca.shape[1]
+                )
+
+            ]
+
+            pca_df=pd.DataFrame(
+                X_pca,
+                columns=cols
+            )
+
+            pca_df[target]=(
+                y.values
+            )
+
+            return pca_df
+
+        except Exception as e:
+
+            print(
+                f"PCA skipped: {e}"
+            )
+
+            return df
