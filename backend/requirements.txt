@@ -42,3 +42,25 @@ sqlalchemy
 psycopg2-binary
 
 chromadb
+
+fastapi
+uvicorn
+
+pandas
+numpy
+scikit-learn
+
+langchain
+langgraph
+langchain-groq
+
+python-dotenv
+
+openpyxl
+
+sqlalchemy
+psycopg2-binary
+
+chromadb
+
+imbalanced-learn

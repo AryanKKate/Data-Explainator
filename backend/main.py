@@ -1,19 +1,32 @@
 from services.load_data import DataLoader
 from graphs.analyst_graph import app
 
+
 df=DataLoader.load(
-    "data/sample.csv"
+"data/sample.csv"
 )
+
 
 result=app.invoke({
 
-    "data":df
+"data":df,
+
+"profile":{},
+
+"user_query":
+"Predict gadget y sales for the next quarter"
+
 })
 
-print("\nCleaned Data:\n")
 
-print(result["data"])
+print(
+result["task_type"]
+)
 
-print("\nProfile:\n")
+print(
+result["plan"]
+)
 
-print(result["profile"])
+print(
+result["engineered_data"].head()
+)
