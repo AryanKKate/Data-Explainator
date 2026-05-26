@@ -3,7 +3,7 @@ from graphs.analyst_graph import app
 
 
 df=DataLoader.load(
-"data/sample.csv"
+"data/sample1.csv"
 )
 
 
@@ -14,7 +14,7 @@ result=app.invoke({
 "profile":{},
 
 "user_query":
-"Predict gadget y sales for the next quarter"
+"Predict customer churn and explain the important factors affecting churn"
 
 })
 

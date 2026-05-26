@@ -3,15 +3,23 @@ import pandas as pd
 
 from typing import TypedDict
 import pandas as pd
+from services.clean_data import DataCleaner
+from services.profile_data import DataProfiler
+from langgraph.graph import StateGraph
 from agents.intent_agent import IntentAgent
 from agents.planning_agent import PlanningAgent
 from agents.feature_agent import FeatureAgent
+from agents.schema_agent import SchemaAgent
+from agents.validation_agent import ValidationAgent
+
 
 class GraphState(TypedDict):
 
-    data: pd.DataFrame
+    data: object
 
     profile: dict
+
+    schema: dict
 
     user_query: str
 
@@ -21,11 +29,11 @@ class GraphState(TypedDict):
 
     plan: dict
 
-    engineered_data: pd.DataFrame
+    engineered_data: object
 
-    insights: str
+    validation_report: dict
 
-from services.profile_data import DataProfiler
+##Define Nodes
 
 def profile_node(state):
 
@@ -33,11 +41,11 @@ def profile_node(state):
         state["data"]
     )
 
-    state["profile"]=profile
+    return{
+        "profile" : profile
+    }
 
-    return state
 
-from services.clean_data import DataCleaner
 
 def clean_node(state):
 
@@ -45,59 +53,118 @@ def clean_node(state):
         state["data"]
     )
 
-    state["data"]=cleaned
-
-    return state
+    return {"data" : cleaned}
 
 def intent_node(state):
 
-    result=IntentAgent.detect(
-
+    result = IntentAgent.detect(
         state["user_query"]
-
     )
 
-    state["task_type"]=(
-        result["task_type"]
-    )
+    return {
 
-    state["target_column"]=(
+        "task_type":
+        result["task_type"],
+
+        "target_column":
         result["target"]
-    )
 
-    return state
+    }
+
 def planning_node(state):
 
-    plan=PlanningAgent.create_plan(
-
+    plan = PlanningAgent.create_plan(
         state["task_type"]
-
     )
 
-    state["plan"]=plan
-
-    return state
+    return {
+        "plan": plan
+    }
 
 def feature_node(state):
 
-    steps=state["plan"]["steps"]
+    engineered = (
+        FeatureAgent.process(
+            state["data"],
+            state["plan"]["steps"],
+            state["schema"],
+            state["target_column"]
+        )
+    )
 
-    engineered=FeatureAgent.process(
+    return {
+        "engineered_data":
+        engineered
+    }
+
+def schema_node(state):
+
+    columns=list(
+
+        state["data"].columns
+
+    )
+
+    schema=SchemaAgent.analyze(
+        columns
+    )
+
+    return{
+        "schema":schema
+    }
+
+def validation_node(state):
+
+    report = (
+        ValidationAgent.validate(
+            state["engineered_data"]
+        )
+    )
+
+    return {
+        "validation_report":
+        report
+    }
+
+def feature_node(state):
+
+
+    target=(
+        state[
+        "target_column"
+        ]
+    )
+
+    steps=(
+        state[
+        "plan"
+        ]["steps"]
+    )
+
+
+    engineered=(
+
+    FeatureAgent.process(
 
         state["data"],
-        steps
+        steps,
+        state["schema"],
+        target
+
     )
 
-    state["engineered_data"]=(
-        engineered
     )
 
-    return state
-from langgraph.graph import StateGraph
+    return{
+        "engineered_data" : engineered
+    }
+
 
 workflow=StateGraph(
 GraphState
 )
+
+##Nodes
 
 workflow.add_node(
 "clean",
@@ -124,9 +191,24 @@ workflow.add_node(
 feature_node
 )
 
+workflow.add_node(
+    "schema",
+    schema_node
+)
+workflow.add_node(
+
+"validation",
+
+validation_node
+
+)
+
+
 workflow.set_entry_point(
 "clean"
 )
+
+## Edges
 
 workflow.add_edge(
 "clean",
@@ -148,4 +230,18 @@ workflow.add_edge(
 "feature"
 )
 
+workflow.add_edge(
+    "profile",
+    "schema"
+)
+
+workflow.add_edge(
+    "schema",
+    "intent"
+)
+
+workflow.add_edge(
+"feature",
+"validation"
+)
 app=workflow.compile()

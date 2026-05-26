@@ -30,6 +30,7 @@ class IntentAgent:
 
         - target column
 
+
         Query:
 
         {query}

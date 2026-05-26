@@ -1,9 +1,15 @@
-from agents.intent_agent import IntentAgent
+from agents.schema_agent import SchemaAgent
 
-result=IntentAgent.detect(
+columns=[
 
-"Predict customer churn"
+"customer_id",
+"age",
+"monthly_spend",
+"last_login",
+"churn"
 
+]
+
+print(
+SchemaAgent.analyze(columns)
 )
-
-print(result)

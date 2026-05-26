@@ -16,6 +16,11 @@ class DataProfiler:
             "dtypes":
             df.dtypes.astype(
             str
+            ).to_dict(),
+
+            "stats":
+            df.describe(
+                include='all'
             ).to_dict()
 
         }
