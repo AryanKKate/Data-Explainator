@@ -210,24 +210,13 @@ workflow.set_entry_point(
 
 ## Edges
 
-workflow.add_edge(
-"clean",
-"profile"
+workflow.set_entry_point(
+    "clean"
 )
 
 workflow.add_edge(
-"profile",
-"intent"
-)
-
-workflow.add_edge(
-"intent",
-"planning"
-)
-
-workflow.add_edge(
-"planning",
-"feature"
+    "clean",
+    "profile"
 )
 
 workflow.add_edge(
@@ -241,7 +230,21 @@ workflow.add_edge(
 )
 
 workflow.add_edge(
-"feature",
-"validation"
+    "intent",
+    "planning"
+)
+
+workflow.add_edge(
+    "planning",
+    "feature"
+)
+
+workflow.add_edge(
+    "feature",
+    "validation"
+)
+
+workflow.set_finish_point(
+    "validation"
 )
 app=workflow.compile()

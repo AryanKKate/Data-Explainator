@@ -3,26 +3,17 @@ class ValidationAgent:
     @staticmethod
     def validate(df):
 
-        report={}
+        report = {}
 
-        report[
-        "missing"
-        ]=(
-            df.isnull()
-            .sum()
-            .sum()
+        report["missing"] = int(
+            df.isnull().sum().sum()
         )
 
-        report[
-        "duplicates"
-        ]=(
-            df.duplicated()
-            .sum()
+        report["duplicates"] = int(
+            df.duplicated().sum()
         )
 
-        report[
-        "columns"
-        ]=list(
+        report["columns"] = list(
             df.columns
         )
 

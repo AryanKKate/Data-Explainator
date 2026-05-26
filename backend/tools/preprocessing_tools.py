@@ -87,69 +87,96 @@ class FeatureTools:
 
 
     @staticmethod
-    def encode(
-        df,
-        target
-    ):
+    def encode(df, target):
 
-        categorical=(
-            df.select_dtypes(
-                include=['object']
+        categorical = df.select_dtypes(
+            include=['object']
+        ).columns.tolist()
+
+        # Remove target if present
+        if target in categorical:
+            categorical.remove(
+                target
             )
+
+        df = pd.get_dummies(
+            df,
+            columns=categorical,
+            drop_first=True,
+            dtype=int
         )
-
-        for col in categorical:
-
-            if col!=target:
-
-                le=LabelEncoder()
-
-                df[col]=(
-                    le.fit_transform(
-                    df[col]
-                    .astype(str)
-                    )
-                )
 
         return df
 
 
     @staticmethod
-    def scale(df, target):
+    def scale(df, target, schema=None):
+
+        from sklearn.preprocessing import StandardScaler
 
         y = df[target]
-
-        X = df.drop(
-            columns=[target]
-        )
+        X = df.drop(columns=[target])
 
         scaler = StandardScaler()
+
+        cols_to_scale = []
 
         numerical = X.select_dtypes(
             include=['number']
         )
 
-        cols_to_scale=[]
+        # Get schema roles if available
+        roles = {}
+
+        if schema:
+            roles = schema.get(
+                "column_roles",
+                {}
+            )
 
         for col in numerical.columns:
 
-            # Ignore binary columns
-            unique_count=(
+            unique_count = (
                 X[col]
                 .nunique()
             )
 
-            if unique_count > 2:
+            # Skip binary / one-hot columns
+            if unique_count <= 2:
+                continue
+
+            # Skip categorical features if schema knows them
+            if (
+                col in roles and
+                roles[col] == "categorical"
+            ):
+                continue
+
+            # Determine if feature behaves like continuous
+            uniqueness_ratio = (
+                unique_count / len(X)
+            )
+
+            # Scale continuous numeric features
+            if uniqueness_ratio > 0.05:
 
                 cols_to_scale.append(
                     col
                 )
 
+        print(
+            "\nScaling columns:"
+        )
+
+        print(
+            cols_to_scale
+        )
+
         if cols_to_scale:
 
             X[
                 cols_to_scale
-            ]=(
+            ] = (
                 scaler.fit_transform(
                     X[
                         cols_to_scale
@@ -157,7 +184,7 @@ class FeatureTools:
                 )
             )
 
-        X[target]=y
+        X[target] = y
 
         return X
     
@@ -305,3 +332,168 @@ class FeatureTools:
             )
 
             return df
+        
+    @staticmethod
+    def normalize_categories(df):
+
+        categorical = df.select_dtypes(
+            include=['object']
+        )
+
+        for col in categorical:
+
+            df[col] = (
+                df[col]
+                .astype(str)
+                .str.strip()
+                .str.lower()
+            )
+
+        return df
+    
+    @staticmethod
+    def process_cyclical_features(df):
+
+        import numpy as np
+
+        weekday_map = {
+
+            "mon":0,
+            "monday":0,
+
+            "tue":1,
+            "tuesday":1,
+
+            "wed":2,
+            "wednesday":2,
+
+            "thu":3,
+            "thursday":3,
+
+            "fri":4,
+            "friday":4,
+
+            "sat":5,
+            "saturday":5,
+
+            "sun":6,
+            "sunday":6
+        }
+
+        month_map = {
+
+            "jan":1,
+            "january":1,
+
+            "feb":2,
+            "february":2,
+
+            "mar":3,
+            "march":3,
+
+            "apr":4,
+            "april":4,
+
+            "may":5,
+
+            "jun":6,
+            "june":6,
+
+            "jul":7,
+            "july":7,
+
+            "aug":8,
+            "august":8,
+
+            "sep":9,
+            "september":9,
+
+            "oct":10,
+            "october":10,
+
+            "nov":11,
+            "november":11,
+
+            "dec":12,
+            "december":12
+        }
+
+        for col in df.columns:
+
+            col_lower=col.lower()
+
+            # Weekday handling
+
+            if "weekday" in col_lower:
+
+                if df[col].dtype=="object":
+
+                    df[col]=(
+                        df[col]
+                        .astype(str)
+                        .str.lower()
+                        .map(
+                            weekday_map
+                        )
+                    )
+
+                radians=(
+                    2*np.pi*
+                    df[col]/7
+                )
+
+                df[
+                    f"{col}_sin"
+                ]=np.sin(
+                    radians
+                )
+
+                df[
+                    f"{col}_cos"
+                ]=np.cos(
+                    radians
+                )
+
+                df.drop(
+                    columns=[col],
+                    inplace=True
+                )
+
+            # Month handling
+
+            elif "month" in col_lower:
+
+                if df[col].dtype=="object":
+
+                    df[col]=(
+                        df[col]
+                        .astype(str)
+                        .str.lower()
+                        .map(
+                            month_map
+                        )
+                    )
+
+                radians=(
+                    2*np.pi*
+                    df[col]/12
+                )
+
+                df[
+                    f"{col}_sin"
+                ]=np.sin(
+                    radians
+                )
+
+                df[
+                    f"{col}_cos"
+                ]=np.cos(
+                    radians
+                )
+
+                df.drop(
+                    columns=[col],
+                    inplace=True
+                )
+
+        return df
