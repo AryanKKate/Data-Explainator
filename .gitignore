@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite3
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+
+# Testing
+.pytest_cache/
+.coverage
+
+# Data files
+data/*.csv
+data/*.xlsx
+data/*.json
+data/uploads/
+
+# Generated reports
+reports/
+exports/
+
+# Chroma vector database
+chroma/
+chromadb/
+
+# LangGraph checkpoints
+checkpoints/
+
+# Node frontend
+node_modules/
+.next/
+
+# Docker
+.docker/
+
+# Temporary files
+tmp/
+temp/
+
+# Cache
+.cache/
