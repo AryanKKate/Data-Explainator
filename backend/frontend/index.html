@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Explainator Test UI</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; max-width: 900px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    input, textarea, button { width: 100%; margin-top: .5rem; padding: .6rem; }
+    button { cursor: pointer; }
+    pre { background: #111; color: #0f0; padding: 1rem; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Data Explainator – Minimal Test UI</h1>
+  <p>Use this page to manually test backend endpoints.</p>
+
+  <div class="card">
+    <h2>Health</h2>
+    <button id="healthBtn">GET /health</button>
+  </div>
+
+  <div class="card">
+    <h2>Upload & Analyze</h2>
+    <label>Query</label>
+    <input id="uploadQuery" value="Predict housing prices using price as target" />
+    <label>Dataset file</label>
+    <input id="uploadFile" type="file" accept=".csv,.xlsx,.xls,.json" />
+    <button id="uploadBtn">POST /upload-analyze</button>
+  </div>
+
+  <div class="card">
+    <h2>Analyze query only</h2>
+    <label>User Query</label>
+    <textarea id="analyzeQuery" rows="3">Predict housing prices using price as target</textarea>
+    <button id="analyzeBtn">POST /analyze</button>
+  </div>
+
+  <h2>Response</h2>
+  <pre id="output">Ready.</pre>
+
+<script>
+const output = document.getElementById('output');
+const show = (data) => output.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+
+async function callApi(url, opts={}) {
+  try {
+    const res = await fetch(url, opts);
+    const text = await res.text();
+    let body;
+    try { body = JSON.parse(text); } catch { body = text; }
+    show({status: res.status, ok: res.ok, body});
+  } catch (e) {
+    show({error: e.message});
+  }
+}
+
+document.getElementById('healthBtn').onclick = () => callApi('/health');
+
+document.getElementById('uploadBtn').onclick = async () => {
+  const query = document.getElementById('uploadQuery').value;
+  const file = document.getElementById('uploadFile').files[0];
+  if (!file) return show('Please select a file first.');
+
+  const form = new FormData();
+  form.append('file', file);
+  await callApi(`/upload-analyze?query=${encodeURIComponent(query)}`, { method: 'POST', body: form });
+};
+
+document.getElementById('analyzeBtn').onclick = () => {
+  const user_query = document.getElementById('analyzeQuery').value;
+  callApi('/analyze', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ user_query }),
+  });
+};
+</script>
+</body>
+</html>
