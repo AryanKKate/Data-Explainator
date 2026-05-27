@@ -80,9 +80,9 @@ class AnalysisResponse(BaseModel):
     
     session_id: str
     status: str
-    task_type: Optional[str]
-    target_column: Optional[str]
-    profile: Optional[Dict[str, Any]]
+    task_type: Optional[str] = None
+    target_column: Optional[str] = None
+    profile: Optional[Dict[str, Any]] = None
     timestamp: str
 
 
