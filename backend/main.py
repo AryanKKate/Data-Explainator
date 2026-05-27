@@ -19,33 +19,39 @@ result=app.invoke({
 })
 
 
-print(
-result["task_type"]
-)
+# print(
+# result["task_type"]
+# )
+
+# print(
+# result["plan"]
+# )
+
+# print(
+# result["engineered_data"].head()
+# )
+
+# print(
+
+# result[
+# "engineered_data"
+# ][
+# "churn"
+# ]
+# .value_counts()
+
+# )
+
+# print(
+# result[
+# "validation_report"
+# ]
+# )
+
+# print(result["engineered_data"].describe())
 
 print(
-result["plan"]
+    result[
+        "model_plan"
+    ]
 )
-
-print(
-result["engineered_data"].head()
-)
-
-print(
-
-result[
-"engineered_data"
-][
-"churn"
-]
-.value_counts()
-
-)
-
-print(
-result[
-"validation_report"
-]
-)
-
-print(result["engineered_data"].describe())

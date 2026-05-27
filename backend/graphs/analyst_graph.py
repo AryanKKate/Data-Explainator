@@ -11,6 +11,7 @@ from agents.planning_agent import PlanningAgent
 from agents.feature_agent import FeatureAgent
 from agents.schema_agent import SchemaAgent
 from agents.validation_agent import ValidationAgent
+from agents.model_selection import ModelSelectionAgent
 
 
 class GraphState(TypedDict):
@@ -32,6 +33,8 @@ class GraphState(TypedDict):
     engineered_data: object
 
     validation_report: dict
+
+    model_plan:dict
 
 ##Define Nodes
 
@@ -81,21 +84,6 @@ def planning_node(state):
         "plan": plan
     }
 
-def feature_node(state):
-
-    engineered = (
-        FeatureAgent.process(
-            state["data"],
-            state["plan"]["steps"],
-            state["schema"],
-            state["target_column"]
-        )
-    )
-
-    return {
-        "engineered_data":
-        engineered
-    }
 
 def schema_node(state):
 
@@ -159,6 +147,26 @@ def feature_node(state):
         "engineered_data" : engineered
     }
 
+def model_selection_node(state):
+
+    result = (
+
+        ModelSelectionAgent.select(
+
+            state["task_type"],
+            state["schema"],
+            state["engineered_data"],
+            state["target_column"]
+
+        )
+
+    )
+
+    return {
+
+        "model_plan": result
+
+    }
 
 workflow=StateGraph(
 GraphState
@@ -203,6 +211,11 @@ validation_node
 
 )
 
+workflow.add_node(
+    "model_selection",
+    model_selection_node
+)
+
 
 workflow.set_entry_point(
 "clean"
@@ -244,7 +257,12 @@ workflow.add_edge(
     "validation"
 )
 
+workflow.add_edge(
+    "validation",
+    "model_selection"
+)
+
 workflow.set_finish_point(
-    "validation"
+    "model_selection"
 )
 app=workflow.compile()
