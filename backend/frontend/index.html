@@ -37,6 +37,16 @@
     <button id="analyzeBtn">POST /analyze</button>
   </div>
 
+
+  <div class="card">
+    <h2>Complete Query-Driven Analysis</h2>
+    <label>Query</label>
+    <input id="completeQuery" value="Predict price and recommend how to improve value drivers" />
+    <label>Dataset file</label>
+    <input id="completeFile" type="file" accept=".csv,.xlsx,.xls,.json" />
+    <button id="completeBtn">POST /analyze-complete</button>
+  </div>
+
   <h2>Response</h2>
   <pre id="output">Ready.</pre>
 

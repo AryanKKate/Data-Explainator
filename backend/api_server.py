@@ -19,6 +19,7 @@ from logger_config import setup_logging, get_logger
 from services.load_data import DataLoader
 from services.clean_data import DataCleaner
 from services.profile_data import DataProfiler
+from services.analysis_service import QueryAnalysisService
 from graphs.analyst_graph import app as analyst_app
 from exceptions import DataExplainterException
 
@@ -207,6 +208,44 @@ async def upload_and_analyze(
             status_code=500,
             detail="Internal server error"
         )
+
+
+@app.post("/analyze-complete", tags=["Analysis"], summary="Upload dataset and run query-driven analysis")
+async def analyze_complete(
+    file: UploadFile = File(...),
+    query: str = Query(..., min_length=5, description="Analysis query"),
+) -> Dict[str, Any]:
+    """Upload a dataset and run descriptive/diagnostic/predictive/prescriptive analysis based on query."""
+    session_id = str(uuid.uuid4())
+    temp_dir = tempfile.gettempdir()
+    file_path = os.path.join(temp_dir, f"{session_id}_{file.filename}")
+
+    try:
+        contents = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(contents)
+
+        df = DataLoader.load(file_path)
+        cleaned_df = DataCleaner.clean(df)
+        analysis = QueryAnalysisService.analyze(cleaned_df, query)
+
+        return {
+            "session_id": session_id,
+            "status": "completed",
+            "analysis": analysis,
+            "timestamp": datetime.now().isoformat(),
+        }
+    except DataExplainterException as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        logger.error("Unexpected analyze_complete error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
+    finally:
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except OSError:
+                logger.warning("Could not remove temporary file: %s", file_path)
 
 
 @app.post(
