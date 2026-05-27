@@ -78,17 +78,6 @@ document.getElementById('uploadBtn').onclick = async () => {
   await callApi(`/upload-analyze?query=${encodeURIComponent(query)}`, { method: 'POST', body: form });
 };
 
-
-document.getElementById('completeBtn').onclick = async () => {
-  const query = document.getElementById('completeQuery').value;
-  const file = document.getElementById('completeFile').files[0];
-  if (!file) return show('Please select a file first.');
-
-  const form = new FormData();
-  form.append('file', file);
-  await callApi(`/analyze-complete?query=${encodeURIComponent(query)}`, { method: 'POST', body: form });
-};
-
 document.getElementById('analyzeBtn').onclick = () => {
   const user_query = document.getElementById('analyzeQuery').value;
   callApi('/analyze', {
