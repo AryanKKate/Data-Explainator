@@ -70,3 +70,5 @@ temp/
 # Cache
 .cache/
 
+backend/catboost_info
+backend/data

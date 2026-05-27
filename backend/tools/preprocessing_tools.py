@@ -3,7 +3,10 @@ from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import SMOTE
 from sklearn.decomposition import PCA
 import pandas as pd
-
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 class FeatureTools:
 
@@ -84,7 +87,83 @@ class FeatureTools:
         return df.drop(
             columns=date_cols
         )
+    @staticmethod
+    def process_semantic_values(
+        df,
+        semantic_schema
+    ):
 
+        number_words={
+
+            "one":1,
+            "two":2,
+            "three":3,
+            "four":4,
+            "five":5,
+            "six":6,
+            "seven":7,
+            "eight":8,
+            "nine":9,
+            "ten":10
+        }
+
+        for col,info in semantic_schema.items():
+
+            if col not in df.columns:
+                continue
+
+            series=(
+                df[col]
+                .astype(str)
+                .str.lower()
+                .str.strip()
+            )
+
+            if info["semantic"]=="categorical":
+
+                series=series.replace(
+                    number_words
+                )
+
+                series=(
+                    series
+                    .str.extract(
+                        r"(\d+)"
+                    )[0]
+                    .fillna(series)
+                )
+
+                true_values=[
+
+                    "yes",
+                    "y",
+                    "true",
+                    "available"
+
+                ]
+
+                false_values=[
+
+                    "no",
+                    "n",
+                    "false",
+                    "none"
+
+                ]
+
+                series=series.replace(
+                    true_values,
+                    "1"
+                )
+
+                series=series.replace(
+                    false_values,
+                    "0"
+                )
+
+                df[col]=series
+
+        return df
 
     @staticmethod
     def encode(df, target):
@@ -112,7 +191,7 @@ class FeatureTools:
     @staticmethod
     def scale(df, target, schema=None):
 
-        from sklearn.preprocessing import StandardScaler
+        
 
         y = df[target]
         X = df.drop(columns=[target])
@@ -188,17 +267,126 @@ class FeatureTools:
 
         return X
     
+
+
+
     @staticmethod
-    def encode_target(df,target):
+    def encode_target(
+        df,
+        target
+    ):
+
+        if target not in df.columns:
+
+            return df
+
+
+        col=df[target]
+
+
+        # Fill missing target values
+        col=col.fillna(
+            "Unknown"
+        )
+
+
+        # ---------------------
+        # Numeric target
+        # ---------------------
+
+        if pd.api.types.is_numeric_dtype(
+            col
+        ):
+
+            print(
+                f"{target} detected as numeric target"
+            )
+
+            return df
+
+
+        # ---------------------
+        # Check cardinality
+        # ---------------------
+
+        unique_count=(
+
+            col
+            .nunique()
+
+        )
+
+
+        total_rows=(
+
+            len(col)
+
+        )
+
+
+        unique_ratio=(
+
+            unique_count/
+            total_rows
+
+        )
+
+
+        # ---------------------
+        # High cardinality
+        # usually regression-like
+        # ---------------------
+
+        if unique_ratio>0.5:
+
+            print(
+
+                f"{target} appears continuous — skipping encoding"
+
+            )
+
+            return df
+
+
+        # ---------------------
+        # Classification target
+        # ---------------------
 
         le=LabelEncoder()
 
         df[target]=(
+
             le.fit_transform(
-                df[target]
-                .astype(str)
+
+                col.astype(
+                    str
+                )
+
             )
+
         )
+
+        print(
+
+            f"{target} label encoded"
+
+        )
+
+        print(
+
+            dict(
+
+                zip(
+                    le.classes_,
+                    le.transform(
+                        le.classes_
+                    )
+                )
+
+            )
+
+        )
+
 
         return df
     
@@ -351,149 +539,191 @@ class FeatureTools:
 
         return df
     
+
+
+
     @staticmethod
     def process_cyclical_features(df):
 
-        import numpy as np
 
-        weekday_map = {
+        cyclical_columns={
 
-            "mon":0,
-            "monday":0,
+            "month":12,
+            "weekday":7,
+            "hour":24,
+            "quarter":4
 
-            "tue":1,
-            "tuesday":1,
-
-            "wed":2,
-            "wednesday":2,
-
-            "thu":3,
-            "thursday":3,
-
-            "fri":4,
-            "friday":4,
-
-            "sat":5,
-            "saturday":5,
-
-            "sun":6,
-            "sunday":6
         }
 
-        month_map = {
-
-            "jan":1,
-            "january":1,
-
-            "feb":2,
-            "february":2,
-
-            "mar":3,
-            "march":3,
-
-            "apr":4,
-            "april":4,
-
-            "may":5,
-
-            "jun":6,
-            "june":6,
-
-            "jul":7,
-            "july":7,
-
-            "aug":8,
-            "august":8,
-
-            "sep":9,
-            "september":9,
-
-            "oct":10,
-            "october":10,
-
-            "nov":11,
-            "november":11,
-
-            "dec":12,
-            "december":12
-        }
 
         for col in df.columns:
 
             col_lower=col.lower()
 
-            # Weekday handling
 
-            if "weekday" in col_lower:
+            for keyword,max_value in (
 
-                if df[col].dtype=="object":
+                cyclical_columns.items()
 
-                    df[col]=(
-                        df[col]
-                        .astype(str)
-                        .str.lower()
-                        .map(
-                            weekday_map
+            ):
+
+                if keyword in col_lower:
+
+
+                    # force numeric
+
+                    numeric=(
+                        pd.to_numeric(
+                            df[col],
+                            errors="coerce",
+                            
                         )
                     )
 
-                radians=(
-                    2*np.pi*
-                    df[col]/7
-                )
 
-                df[
-                    f"{col}_sin"
-                ]=np.sin(
-                    radians
-                )
+                    # skip if conversion fails
 
-                df[
-                    f"{col}_cos"
-                ]=np.cos(
-                    radians
-                )
+                    if numeric.notna().mean()<0.7:
 
-                df.drop(
-                    columns=[col],
-                    inplace=True
-                )
-
-            # Month handling
-
-            elif "month" in col_lower:
-
-                if df[col].dtype=="object":
-
-                    df[col]=(
-                        df[col]
-                        .astype(str)
-                        .str.lower()
-                        .map(
-                            month_map
+                        print(
+                            f"Skipping cyclical {col}"
                         )
+
+                        continue
+
+
+                    df[
+                        f"{col}_sin"
+                    ]=(
+
+                        np.sin(
+
+                            2*np.pi*
+                            numeric/
+                            max_value
+
+                        )
+
                     )
 
-                radians=(
-                    2*np.pi*
-                    df[col]/12
+
+                    df[
+                        f"{col}_cos"
+                    ]=(
+
+                        np.cos(
+
+                            2*np.pi*
+                            numeric/
+                            max_value
+
+                        )
+
+                    )
+
+
+                    df.drop(
+                        col,
+                        axis=1,
+                        inplace=True
+                    )
+
+                    break
+
+
+        return df
+    
+    @staticmethod
+    def process_semantic_columns(
+        df,
+        semantic_schema
+    ):
+
+        for col,info in (
+
+            semantic_schema.items()
+
+        ):
+
+            semantic=info[
+                "semantic"
+            ]
+
+
+            # currency cleanup
+
+            if semantic=="currency":
+
+                df[col]=(
+
+                    df[col]
+                    .astype(str)
+
+                    .str.replace(
+                        r"[₹,$,€]",
+                        "",
+                        regex=True
+                    )
+
                 )
 
-                df[
-                    f"{col}_sin"
-                ]=np.sin(
-                    radians
+
+            # percentage cleanup
+
+            elif semantic=="percentage":
+
+                df[col]=(
+
+                    df[col]
+                    .astype(str)
+
+                    .str.replace(
+                        "%",
+                        ""
+                    )
+
                 )
 
-                df[
-                    f"{col}_cos"
-                ]=np.cos(
-                    radians
+
+        return df
+    @staticmethod
+    def convert_semantic_numeric(
+        df,
+        semantic_schema
+    ):
+
+        numeric_semantics=[
+
+            "currency",
+            "distance",
+            "area",
+            "percentage"
+
+        ]
+
+        for col,info in semantic_schema.items():
+
+            if col not in df.columns:
+                continue
+
+            if info["semantic"] in numeric_semantics:
+
+                df[col]=(
+
+                    df[col]
+                    .astype(str)
+
+                    .str.replace(
+                        r"[^\d.]",
+                        "",
+                        regex=True
+                    )
+
                 )
 
-                df.drop(
-                    columns=[col],
-                    inplace=True
+                df[col]=pd.to_numeric(
+                    df[col],
+                    errors="coerce"
                 )
 
         return df

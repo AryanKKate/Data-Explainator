@@ -12,7 +12,8 @@ from agents.feature_agent import FeatureAgent
 from agents.schema_agent import SchemaAgent
 from agents.validation_agent import ValidationAgent
 from agents.model_selection import ModelSelectionAgent
-
+from agents.training_agent import TrainingAgent
+from agents.semantic_agent import SemanticAgent
 
 class GraphState(TypedDict):
 
@@ -21,6 +22,8 @@ class GraphState(TypedDict):
     profile: dict
 
     schema: dict
+
+    semantic_schema:dict
 
     user_query: str
 
@@ -35,6 +38,8 @@ class GraphState(TypedDict):
     validation_report: dict
 
     model_plan:dict
+
+    training_results: dict
 
 ##Define Nodes
 
@@ -101,6 +106,26 @@ def schema_node(state):
         "schema":schema
     }
 
+def semantic_node(state):
+
+    semantic=(
+
+        SemanticAgent.analyze(
+
+            state["data"]
+
+        )
+
+    )
+
+    return{
+
+        "semantic_schema":
+
+        semantic
+
+    }
+
 def validation_node(state):
 
     report = (
@@ -134,12 +159,13 @@ def feature_node(state):
 
     FeatureAgent.process(
 
-        state["data"],
-        steps,
-        state["schema"],
-        target
+    state["data"],
+    steps,
+    state["schema"],
+    state["semantic_schema"],
+    target
 
-    )
+)
 
     )
 
@@ -166,6 +192,34 @@ def model_selection_node(state):
 
         "model_plan": result
 
+    }
+
+def training_node(state):
+
+    result=(
+
+        TrainingAgent.train(
+
+            state[
+                "engineered_data"
+            ],
+
+            state[
+                "target_column"
+            ],
+
+            state[
+                "model_plan"
+            ]
+
+        )
+
+    )
+
+    return {
+
+        "training_results":
+        result
     }
 
 workflow=StateGraph(
@@ -203,6 +257,15 @@ workflow.add_node(
     "schema",
     schema_node
 )
+
+workflow.add_node(
+
+    "semantic",
+
+    semantic_node
+
+)
+
 workflow.add_node(
 
 "validation",
@@ -216,6 +279,10 @@ workflow.add_node(
     model_selection_node
 )
 
+workflow.add_node(
+    "training",
+    training_node
+)
 
 workflow.set_entry_point(
 "clean"
@@ -239,6 +306,11 @@ workflow.add_edge(
 
 workflow.add_edge(
     "schema",
+    "semantic"
+)
+
+workflow.add_edge(
+    "semantic",
     "intent"
 )
 
@@ -262,7 +334,12 @@ workflow.add_edge(
     "model_selection"
 )
 
+workflow.add_edge(
+    "model_selection",
+    "training"
+)
+
 workflow.set_finish_point(
-    "model_selection"
+    "training"
 )
 app=workflow.compile()

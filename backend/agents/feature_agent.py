@@ -8,13 +8,18 @@ class FeatureAgent:
         df,
         steps,
         schema,
+        semantic_schema,
         target
     ):
 
         print("\n===== FeatureAgent Started =====")
 
-        # Remove identifiers
-        df = FeatureTools.remove_ids(
+
+        df=df.copy()
+
+
+
+        df=FeatureTools.remove_ids(
             df,
             schema
         )
@@ -24,8 +29,31 @@ class FeatureAgent:
             df.shape
         )
 
-        # Process datetime columns
-        df = FeatureTools.process_dates(
+
+
+        df=FeatureTools.process_semantic_values(
+    df,
+    semantic_schema
+)
+
+        print(
+            "After semantic processing:",
+            df.shape
+        )
+
+        df=FeatureTools.convert_semantic_numeric(
+            df,
+            semantic_schema
+        )
+
+        print(
+        "After semantic numeric conversion:",
+        df.shape
+        )
+
+
+
+        df=FeatureTools.process_dates(
             df,
             schema
         )
@@ -35,8 +63,9 @@ class FeatureAgent:
             df.shape
         )
 
-        # Convert cyclical features
-        df = FeatureTools.process_cyclical_features(
+
+
+        df=FeatureTools.process_cyclical_features(
             df
         )
 
@@ -45,8 +74,7 @@ class FeatureAgent:
             df.shape
         )
 
-        # Missing values
-        df = FeatureTools.handle_missing(
+        df=FeatureTools.handle_missing(
             df
         )
 
@@ -55,8 +83,9 @@ class FeatureAgent:
             df.shape
         )
 
-        # Normalize categories
-        df = FeatureTools.normalize_categories(
+
+
+        df=FeatureTools.normalize_categories(
             df
         )
 
@@ -65,10 +94,17 @@ class FeatureAgent:
             df.shape
         )
 
-        # Encode target separately
-        if target in df.columns:
 
-            df = FeatureTools.encode_target(
+
+        if (
+
+            target
+            and
+            target in df.columns
+
+        ):
+
+            df=FeatureTools.encode_target(
                 df,
                 target
             )
@@ -78,41 +114,62 @@ class FeatureAgent:
             df.shape
         )
 
-        # Planned transformations
+
         for step in steps:
 
             print(
                 f"\nExecuting: {step}"
             )
 
-            if step == "encoding":
 
-                df = FeatureTools.encode(
+            if step=="encoding":
+
+                df=FeatureTools.encode(
                     df,
                     target
                 )
 
-            elif step == "scaling":
 
-                df = FeatureTools.scale(
+            elif step=="scaling":
+
+                df=FeatureTools.scale(
                     df,
                     target,
                     schema
                 )
 
-            elif step == "smote":
 
-                df = FeatureTools.apply_smote(
-                    df,
+            elif step=="smote":
+
+                if (
+
                     target
-                )
+                    and
+                    target in df.columns
 
-            elif step == "pca":
+                ):
 
-                df = FeatureTools.apply_pca(
-                    df,
+                    df=FeatureTools.apply_smote(
+                        df,
+                        target
+                    )
+
+
+            elif step=="pca":
+
+                if (
+
                     target
-                )
+                    and
+                    target in df.columns
+
+                ):
+
+                    df=FeatureTools.apply_pca(
+                        df,
+                        target
+                    )
+
 
             else:
 
@@ -120,11 +177,15 @@ class FeatureAgent:
                     f"Unknown step skipped: {step}"
                 )
 
+
             print(
                 "Current shape:",
                 df.shape
             )
 
-        print("\n===== FeatureAgent Finished =====")
+
+        print(
+            "\n===== FeatureAgent Finished ====="
+        )
 
         return df
