@@ -4,7 +4,7 @@ Provides REST API endpoints for data analysis.
 """
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, validator
 from typing import Dict, Any, List, Optional
@@ -92,6 +92,13 @@ class ErrorResponse(BaseModel):
     error: str
     details: Optional[str] = None
     timestamp: str
+
+
+@app.get("/", tags=["UI"], include_in_schema=False)
+async def ui_home() -> FileResponse:
+    """Serve minimal test UI."""
+    ui_path = os.path.join(os.path.dirname(__file__), "frontend", "index.html")
+    return FileResponse(ui_path)
 
 
 # API Endpoints
