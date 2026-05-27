@@ -3,7 +3,7 @@ FastAPI application for Data Explainator.
 Provides REST API endpoints for data analysis.
 """
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks
+from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, validator
@@ -119,7 +119,7 @@ async def health_check() -> Dict[str, str]:
 )
 async def upload_and_analyze(
     file: UploadFile = File(...),
-    query: str = Field(..., description="Analysis query"),
+    query: str = Query(..., min_length=5, description="Analysis query"),
     background_tasks: BackgroundTasks = BackgroundTasks(),
 ) -> Dict[str, Any]:
     """

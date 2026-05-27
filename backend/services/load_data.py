@@ -5,6 +5,7 @@ Data loading service with validation and error handling.
 from typing import Union
 from pathlib import Path
 import pandas as pd
+from pandas.errors import EmptyDataError
 import logging
 from config import config
 from exceptions import (
@@ -135,6 +136,8 @@ class DataLoader:
             
         except (FileOperationError, FileNotSupportedError, FileSizeExceededError, DataValidationError):
             raise
+        except EmptyDataError as e:
+            raise DataValidationError("Loaded data is empty or has no columns") from e
         except Exception as e:
             error_msg = f"Error loading file {file_path}: {str(e)}"
             logger.error(error_msg)
