@@ -1,70 +1,61 @@
-fastapi
-uvicorn
+# Web Framework
+fastapi==0.109.0
+uvicorn==0.27.0
 
-pandas
-numpy
-scikit-learn
+# Data Processing
+pandas==2.1.4
+numpy==1.26.4
+scipy==1.12.0
 
-langchain
-langgraph
-langchain-openai
+# Machine Learning
+scikit-learn==1.3.2
+xgboost==2.0.3
+lightgbm==4.1.1
+catboost==1.2.2
+imbalanced-learn==0.11.0
+joblib==1.3.2
 
-python-multipart
+# LLM & Language
+langchain==0.1.9
+langgraph==0.0.44
+langchain-groq==0.0.1
 
-pydantic
+# Configuration
+python-dotenv==1.0.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
 
-matplotlib
-plotly
+# Data Serialization
+openpyxl==3.1.2
 
-sqlalchemy
-psycopg2-binary
+# Database
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
 
-chromadb
+# Vector Database
+chromadb==0.4.24
 
-python-dotenv
-fastapi
-uvicorn
+# Data Visualization
+matplotlib==3.8.2
+plotly==5.18.0
 
-pandas
-numpy
-scikit-learn
+# Form Data
+python-multipart==0.0.6
 
-langchain
-langgraph
+# Retry Logic
+tenacity==8.2.3
 
-langchain-groq
+# Testing
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-asyncio==0.23.3
 
-python-dotenv
+# Code Quality & Linting
+black==23.12.1
+flake8==6.1.0
+isort==5.13.2
+mypy==1.7.1
+pylint==3.0.3
 
-openpyxl
-
-sqlalchemy
-psycopg2-binary
-
-chromadb
-
-fastapi
-uvicorn
-
-pandas
-numpy
-scikit-learn
-
-langchain
-langgraph
-langchain-groq
-
-python-dotenv
-
-openpyxl
-
-sqlalchemy
-psycopg2-binary
-
-chromadb
-
-imbalanced-learn
-xgboost
-lightgbm 
-catboost
-joblib
+# Logging
+python-json-logger==2.0.7
