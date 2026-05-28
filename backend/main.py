@@ -3,7 +3,7 @@ from graphs.analyst_graph import app
 
 
 df=DataLoader.load(
-"data/housing.csv"
+"data/sample1.csv"
 )
 
 
@@ -14,7 +14,7 @@ result=app.invoke({
 "profile":{},
 
 "user_query":
-"Predict housing prices using price as the target variable."
+"PRedict customer churn"
 
 })
 print(

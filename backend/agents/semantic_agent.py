@@ -8,75 +8,99 @@ class SemanticAgent:
     @staticmethod
     def analyze(df):
 
-        semantic_schema={}
+        semantic_schema = {}
 
-        semantic_patterns={
+        semantic_patterns = {
 
-            "identifier":[
+            "identifier": [
                 "id",
                 "uuid",
+                "guid",
                 "customer",
+                "client",
                 "user",
-                "order",
+                "employee",
                 "transaction",
-                "house"
+                "invoice",
+                "order",
+                "product",
+                "house",
+                "record"
             ],
 
-            "location":[
+            "location": [
                 "city",
                 "country",
                 "state",
                 "region",
-                "locality",
                 "district",
-                "address"
-            ],
-
-            "area":[
                 "area",
-                "sqft",
-                "square",
-                "acre"
+                "address",
+                "location",
+                "locality",
+                "zipcode",
+                "postal"
             ],
 
-            "currency":[
+            "currency": [
                 "price",
                 "salary",
                 "income",
                 "cost",
                 "expense",
-                "maintenance",
                 "revenue",
-                "profit"
+                "profit",
+                "maintenance",
+                "rent",
+                "amount",
+                "fee",
+                "payment",
+                "budget"
             ],
 
-            "distance":[
+            "distance": [
                 "distance",
                 "km",
+                "kilometer",
                 "mile",
-                "meter"
+                "meter",
+                "radius"
             ],
 
-            "percentage":[
+            "area": [
+                "sqft",
+                "square",
+                "acre",
+                "hectare",
+                "area",
+                "plot"
+            ],
+
+            "percentage": [
                 "percent",
+                "percentage",
                 "ratio",
-                "rate"
+                "rate",
+                "growth",
+                "margin"
             ],
 
-            "datetime":[
+            "datetime": [
                 "date",
                 "time",
-                "day",
-                "month",
-                "year",
                 "timestamp",
+                "year",
+                "month",
+                "day",
                 "created",
-                "updated"
+                "updated",
+                "joined",
+                "dob",
+                "birth"
             ]
         }
 
-
-        boolean_tokens={
+        boolean_tokens = {
 
             "yes",
             "no",
@@ -88,273 +112,243 @@ class SemanticAgent:
             "1"
         }
 
+        unit_patterns = {
 
-        unit_patterns={
+            r"₹|\$|€|usd|inr|eur": "currency",
 
-            r"km":"distance",
-            r"mile":"distance",
-            r"meter":"distance",
+            r"km|kilometer|mile|meter": "distance",
 
-            r"sq.?ft":"area",
-            r"sq.?m":"area",
-            r"acre":"area",
+            r"sq.?ft|sq.?m|acre|hectare": "area",
 
-            r"₹|\$|€":"currency",
-
-            r"%":"percentage"
+            r"%": "percentage"
         }
 
+        type_mapping = {
+
+            "identifier": "identifier",
+
+            "location": "categorical",
+
+            "currency": "numeric",
+
+            "distance": "numeric",
+
+            "area": "numeric",
+
+            "percentage": "numeric",
+
+            "datetime": "datetime"
+        }
+
+        priority_order = [
+
+            "identifier",
+            "currency",
+            "distance",
+            "area",
+            "percentage",
+            "location",
+            "datetime"
+        ]
 
         for col in df.columns:
 
-            values=(
+            series = df[col]
 
-                df[col]
+            values = (
+
+                series
                 .dropna()
                 .astype(str)
                 .head(30)
-
             )
 
-
-            joined=(
+            joined = (
 
                 " ".join(values)
                 .lower()
-
             )
 
+            col_lower = col.lower()
 
-            col_lower=col.lower()
+            info = {
 
+                "type": "unknown",
 
-            info={
+                "semantic": "unknown",
 
-                "type":"unknown",
+                "unit": None,
 
-                "semantic":"unknown",
+                "nullable": (
 
-                "unit":None,
+                    series
+                    .isnull()
+                    .sum() > 0
+                ),
 
-                "nullable":
-
-                df[col]
-                .isnull()
-                .sum()>0,
-
-                "confidence":0
+                "confidence": 0
             }
 
+            numeric_series = pd.to_numeric(
 
-            numeric_ratio=(
-
-                pd.to_numeric(
-
-                    df[col],
-                    errors="coerce"
-
-                )
-
-                .notna()
-
-                .mean()
-
+                series,
+                errors="coerce"
             )
 
+            numeric_ratio = (
 
-            if numeric_ratio>0.7:
+                numeric_series
+                .notna()
+                .mean()
+            )
 
-                info["type"]="numeric"
+            unique_ratio = (
 
-                unique_ratio=(
+                series
+                .nunique(dropna=True)
 
-                    df[col]
-                    .nunique()
+                /
 
-                    /
+                max(len(series), 1)
+            )
 
-                    len(df)
+            if numeric_ratio > 0.7:
 
-                )
+                info["type"] = "numeric"
 
-                if unique_ratio<0.1:
+                if unique_ratio < 0.1:
 
-                    info["semantic"]="ordinal"
+                    info["semantic"] = "ordinal"
 
-                elif unique_ratio<0.4:
+                elif unique_ratio < 0.4:
 
-                    info["semantic"]="categorical"
+                    info["semantic"] = "categorical"
 
                 else:
 
-                    info["semantic"]="continuous"
+                    info["semantic"] = "continuous"
 
-                info["confidence"]=0.9
+                info["confidence"] = 0.9
 
-
-            possible_date=(
+            possible_date = (
 
                 any(
-
                     keyword in col_lower
-
-                    for keyword in
-
-                    semantic_patterns["datetime"]
-
+                    for keyword in semantic_patterns["datetime"]
                 )
 
                 or
 
                 values.str.contains(
-
                     r"\d{1,4}[/-]\d{1,2}[/-]\d{1,4}",
-
                     regex=True
-
-                ).mean()>0.3
-
+                ).mean() > 0.3
             )
-
 
             if possible_date:
 
-                date_ratio=(
+                parsed_dates = pd.to_datetime(
 
-                    pd.to_datetime(
+                    series,
+                    errors="coerce",
+                    format="mixed"
+                )
 
-                        df[col],
+                date_ratio = (
 
-                        errors="coerce",
-                        format="mixed"
-
-                    )
-
+                    parsed_dates
                     .notna()
-
                     .mean()
-
                 )
 
             else:
 
-                date_ratio=0
+                date_ratio = 0
 
+            if date_ratio > 0.8:
 
-            if date_ratio>0.8:
+                info["type"] = "datetime"
 
-                info["type"]="datetime"
+                info["semantic"] = "datetime"
 
-                info["semantic"]="timestamp"
+                info["confidence"] = 0.95
 
-                info["confidence"]=0.95
+            cleaned_tokens = set(
 
+                joined
+                .replace(",", " ")
+                .split()
+            )
 
             if (
 
-                set(
+                len(cleaned_tokens) > 0
 
-                    joined.split()
+                and
 
-                )
-
-                .issubset(
-
+                cleaned_tokens.issubset(
                     boolean_tokens
-
                 )
-
             ):
 
-                info["type"]="boolean"
+                info["type"] = "boolean"
 
-                info["semantic"]="binary"
+                info["semantic"] = "binary"
 
-                info["confidence"]=0.95
+                info["confidence"] = 0.95
 
-
-            for pattern,meaning in unit_patterns.items():
+            for pattern, meaning in unit_patterns.items():
 
                 if re.search(
-
                     pattern,
                     joined
-
                 ):
 
-                    info["semantic"]=meaning
+                    info["semantic"] = meaning
 
-                    info["unit"]=pattern
+                    info["unit"] = pattern
 
-                    info["confidence"]=0.95
+                    info["confidence"] = max(
+                        info["confidence"],
+                        0.95
+                    )
 
-
-            priority_order=[
-
-                "identifier",
-                "currency",
-                "distance",
-                "area",
-                "percentage",
-                "location",
-                "datetime"
-
-            ]
-
-
-            type_mapping={
-
-                "identifier":"identifier",
-
-                "currency":"numeric",
-
-                "distance":"numeric",
-
-                "area":"numeric",
-
-                "percentage":"numeric",
-
-                "location":"categorical",
-
-                "datetime":"datetime"
-            }
-
+                    info["type"] = type_mapping.get(
+                        meaning,
+                        info["type"]
+                    )
 
             for semantic in priority_order:
 
-                keywords=(
-
-                    semantic_patterns[
-                        semantic
-                    ]
-
-                )
-
-                tokens=col.lower().split("_")
+                keywords = semantic_patterns[semantic]
 
                 if any(
-                    word==token
-                    for token in tokens
-                    for word in date_keywords
+                    keyword in col_lower
+                    for keyword in keywords
                 ):
 
-                    info["semantic"]=semantic
+                    info["semantic"] = semantic
 
-                    info["confidence"]=0.95
+                    info["confidence"] = max(
+                        info["confidence"],
+                        0.95
+                    )
 
-                    info["type"]=(
-                        type_mapping.get(
-                            semantic,
-                            info["type"]
-                        )
+                    info["type"] = type_mapping.get(
+                        semantic,
+                        info["type"]
                     )
 
                     break
 
+            if info["semantic"] == "identifier":
 
-            semantic_schema[
-                col
-            ]=info
+                if unique_ratio > 0.9:
 
+                    info["type"] = "identifier"
+
+                    info["confidence"] = 0.98
+
+            semantic_schema[col] = info
 
         return semantic_schema
