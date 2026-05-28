@@ -3,7 +3,7 @@ from graphs.analyst_graph import app
 
 
 df=DataLoader.load(
-"data/sample1.csv"
+"data/sample.csv"
 )
 
 
@@ -14,7 +14,7 @@ result=app.invoke({
 "profile":{},
 
 "user_query":
-"PRedict customer churn"
+"Predict inventory status using all available product, warehouse, supplier, pricing, quantity, and restocking information. Automatically clean inconsistent values, detect semantic column meanings, engineer useful features, select the best ML model adaptively, and explain the most important factors affecting stock status."
 
 })
 print(

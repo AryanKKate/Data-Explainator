@@ -1,11 +1,11 @@
 from typing import TypedDict
 import pandas as pd
 
-from typing import TypedDict
-import pandas as pd
 from services.clean_data import DataCleaner
 from services.profile_data import DataProfiler
+
 from langgraph.graph import StateGraph
+
 from agents.intent_agent import IntentAgent
 from agents.planning_agent import PlanningAgent
 from agents.feature_agent import FeatureAgent
@@ -15,6 +15,7 @@ from agents.model_selection import ModelSelectionAgent
 from agents.training_agent import TrainingAgent
 from agents.semantic_agent import SemanticAgent
 
+
 class GraphState(TypedDict):
 
     data: object
@@ -23,7 +24,7 @@ class GraphState(TypedDict):
 
     schema: dict
 
-    semantic_schema:dict
+    semantic_schema: dict
 
     user_query: str
 
@@ -37,36 +38,79 @@ class GraphState(TypedDict):
 
     validation_report: dict
 
-    model_plan:dict
+    model_plan: dict
 
     training_results: dict
-
-##Define Nodes
-
-def profile_node(state):
-
-    profile=DataProfiler.profile(
-        state["data"]
-    )
-
-    return{
-        "profile" : profile
-    }
-
 
 
 def clean_node(state):
 
-    cleaned=DataCleaner.clean(
+    cleaned = DataCleaner.clean(
         state["data"]
     )
 
-    return {"data" : cleaned}
+    return {
+
+        "data": cleaned
+
+    }
+
+
+def profile_node(state):
+
+    profile = DataProfiler.profile(
+        state["data"]
+    )
+
+    return {
+
+        "profile": profile
+
+    }
+
+
+def schema_node(state):
+
+    columns = list(
+
+        state["data"].columns
+
+    )
+
+    schema = SchemaAgent.analyze(
+        columns
+    )
+
+    return {
+
+        "schema": schema
+
+    }
+
+
+def semantic_node(state):
+
+    semantic = SemanticAgent.analyze(
+
+        state["data"]
+
+    )
+
+    return {
+
+        "semantic_schema": semantic
+
+    }
+
 
 def intent_node(state):
 
     result = IntentAgent.detect(
-        state["user_query"]
+
+        query=state["user_query"],
+
+        columns=state["data"].columns
+
     )
 
     return {
@@ -79,140 +123,105 @@ def intent_node(state):
 
     }
 
+
 def planning_node(state):
 
     plan = PlanningAgent.create_plan(
+
         state["task_type"]
+
     )
 
     return {
+
         "plan": plan
-    }
-
-
-def schema_node(state):
-
-    columns=list(
-
-        state["data"].columns
-
-    )
-
-    schema=SchemaAgent.analyze(
-        columns
-    )
-
-    return{
-        "schema":schema
-    }
-
-def semantic_node(state):
-
-    semantic=(
-
-        SemanticAgent.analyze(
-
-            state["data"]
-
-        )
-
-    )
-
-    return{
-
-        "semantic_schema":
-
-        semantic
 
     }
 
-def validation_node(state):
-
-    report = (
-        ValidationAgent.validate(
-            state["engineered_data"]
-        )
-    )
-
-    return {
-        "validation_report":
-        report
-    }
-
-def feature_node(state):
-
-
-    target=(
-        state[
-        "target_column"
-        ]
-    )
-
-    steps=(
-        state[
-        "plan"
-        ]["steps"]
-    )
-
-
-    engineered=(
-
-    FeatureAgent.process(
-
-    state["data"],
-    steps,
-    state["schema"],
-    state["semantic_schema"],
-    target
-
-)
-
-    )
-
-    return{
-        "engineered_data" : engineered
-    }
 
 def model_selection_node(state):
 
-    result = (
+    config = ModelSelectionAgent.select(
 
-        ModelSelectionAgent.select(
+        intent=state["task_type"],
 
-            state["task_type"],
-            state["schema"],
-            state["engineered_data"],
-            state["target_column"]
+        schema=state["semantic_schema"],
 
-        )
+        df=state["data"],
+
+        target=state["target_column"]
 
     )
 
     return {
 
-        "model_plan": result
+        "model_plan": config
 
     }
 
+
+def feature_node(state):
+
+    target = state[
+        "target_column"
+    ]
+
+    engineered = FeatureAgent.process(
+
+        df=state["data"],
+
+        steps=state[
+            "model_plan"
+        ]["steps"],
+
+        schema=state["schema"],
+
+        semantic_schema=state[
+            "semantic_schema"
+        ],
+
+        target=target
+
+    )
+
+    return {
+
+        "engineered_data": engineered
+
+    }
+
+
+def validation_node(state):
+
+    report = ValidationAgent.validate(
+
+        state["engineered_data"]
+
+    )
+
+    return {
+
+        "validation_report":
+        report
+
+    }
+
+
 def training_node(state):
 
-    result=(
+    result = TrainingAgent.train(
 
-        TrainingAgent.train(
+        df=state[
+            "engineered_data"
+        ],
 
-            state[
-                "engineered_data"
-            ],
+        target=state[
+            "target_column"
+        ],
 
-            state[
-                "target_column"
-            ],
-
-            state[
-                "model_plan"
-            ]
-
-        )
+        model_plan=state[
+            "model_plan"
+        ]
 
     )
 
@@ -220,37 +229,23 @@ def training_node(state):
 
         "training_results":
         result
+
     }
 
-workflow=StateGraph(
-GraphState
+
+workflow = StateGraph(
+    GraphState
 )
 
-##Nodes
 
 workflow.add_node(
-"clean",
-clean_node
-)
-
-workflow.add_node(
-"profile",
-profile_node
+    "clean",
+    clean_node
 )
 
 workflow.add_node(
-"intent",
-intent_node
-)
-
-workflow.add_node(
-"planning",
-planning_node
-)
-
-workflow.add_node(
-"feature",
-feature_node
+    "profile",
+    profile_node
 )
 
 workflow.add_node(
@@ -259,19 +254,18 @@ workflow.add_node(
 )
 
 workflow.add_node(
-
     "semantic",
-
     semantic_node
-
 )
 
 workflow.add_node(
+    "intent",
+    intent_node
+)
 
-"validation",
-
-validation_node
-
+workflow.add_node(
+    "planning",
+    planning_node
 )
 
 workflow.add_node(
@@ -280,19 +274,25 @@ workflow.add_node(
 )
 
 workflow.add_node(
+    "feature",
+    feature_node
+)
+
+workflow.add_node(
+    "validation",
+    validation_node
+)
+
+workflow.add_node(
     "training",
     training_node
 )
 
-workflow.set_entry_point(
-"clean"
-)
-
-## Edges
 
 workflow.set_entry_point(
     "clean"
 )
+
 
 workflow.add_edge(
     "clean",
@@ -321,6 +321,11 @@ workflow.add_edge(
 
 workflow.add_edge(
     "planning",
+    "model_selection"
+)
+
+workflow.add_edge(
+    "model_selection",
     "feature"
 )
 
@@ -331,15 +336,13 @@ workflow.add_edge(
 
 workflow.add_edge(
     "validation",
-    "model_selection"
-)
-
-workflow.add_edge(
-    "model_selection",
     "training"
 )
+
 
 workflow.set_finish_point(
     "training"
 )
-app=workflow.compile()
+
+
+app = workflow.compile()

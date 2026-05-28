@@ -8,69 +8,189 @@ class ModelSelectionAgent:
         target
     ):
 
-        rows = len(df)
-        cols = len(df.columns)
+        rows=len(df)
 
-        result = {}
+        cols=len(df.columns)
 
-        # Classification
-        if intent == "classification":
+        feature_count=cols-1
 
-            result = {
+        numeric_features=len(
+            df.select_dtypes(
+                include=["number"]
+            ).columns
+        )
 
-                "task":"classification",
+        categorical_features=len(
+            df.select_dtypes(
+                exclude=["number"]
+            ).columns
+        )
 
-                "models":[
+        missing_ratio=(
+
+            df.isnull().sum().sum()
+
+            /
+
+            (rows*cols)
+
+        )
+
+        high_dimensional=feature_count>100
+
+        small_dataset=rows<1000
+
+        large_dataset=rows>100000
+
+        sparse_dataset=missing_ratio>0.3
+
+        imbalanced=False
+
+        if intent=="classification":
+
+            imbalance_ratio=(
+
+                df[target]
+                .value_counts(normalize=True)
+                .min()
+
+            )
+
+            imbalanced=imbalance_ratio<0.2
+
+        result={
+
+            "task":intent,
+
+            "models":[],
+
+            "metrics":[],
+
+            "steps":[],
+
+            "cross_validation":False,
+
+            "ensemble":False
+
+        }
+
+        if intent=="classification":
+
+            result["metrics"]=[
+
+                "accuracy",
+                "precision",
+                "recall",
+                "f1",
+                "roc_auc"
+
+            ]
+
+            if small_dataset:
+
+                result["models"]=[
+
+                    "random_forest",
+                    "logistic_regression"
+
+                ]
+
+                result[
+                    "cross_validation"
+                ]=True
+
+            else:
+
+                result["models"]=[
+
                     "xgboost",
                     "lightgbm",
                     "catboost",
                     "random_forest"
-                ],
 
-                "metrics":[
-                    "accuracy",
-                    "precision",
-                    "recall",
-                    "f1",
-                    "roc_auc"
                 ]
-            }
 
-        # Regression
-        elif intent == "regression":
+            if imbalanced:
 
-            result = {
+                result["steps"].append(
+                    "smote"
+                )
 
-                "task":"regression",
+        elif intent=="regression":
 
-                "models":[
+            result["metrics"]=[
+
+                "rmse",
+                "mae",
+                "r2"
+
+            ]
+
+            if small_dataset:
+
+                result["models"]=[
+
+                    "random_forest",
+                    "linear_regression"
+
+                ]
+
+                result[
+                    "cross_validation"
+                ]=True
+
+            else:
+
+                result["models"]=[
+
                     "xgboost",
                     "lightgbm",
                     "catboost",
                     "random_forest"
-                ],
 
-                "metrics":[
-                    "rmse",
-                    "mae",
-                    "r2"
                 ]
-            }
 
         elif intent=="clustering":
 
-            result={
+            result["models"]=[
 
-                "task":"clustering",
+                "kmeans",
+                "dbscan"
 
-                "models":[
-                    "kmeans",
-                    "dbscan"
-                ],
+            ]
 
-                "metrics":[
-                    "silhouette"
-                ]
-            }
+            result["metrics"]=[
+
+                "silhouette"
+
+            ]
+
+        if numeric_features>0:
+
+            result["steps"].append(
+                "scaling"
+            )
+
+        if categorical_features>0:
+
+            result["steps"].append(
+                "encoding"
+            )
+
+        if sparse_dataset:
+
+            result["steps"].append(
+                "advanced_imputation"
+            )
+
+        if high_dimensional:
+
+            result["steps"].append(
+                "feature_selection"
+            )
+
+        if len(result["models"])>=3:
+
+            result["ensemble"]=True
 
         return result

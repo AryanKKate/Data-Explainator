@@ -23,7 +23,6 @@ class SemanticAgent:
                 "transaction",
                 "invoice",
                 "order",
-                "product",
                 "house",
                 "record"
             ],

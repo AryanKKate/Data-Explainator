@@ -14,12 +14,13 @@ class FeatureAgent:
 
         print("\n===== FeatureAgent Started =====")
 
+        df = df.copy()
 
-        df=df.copy()
+        # =====================================
+        # Remove identifiers
+        # =====================================
 
-
-
-        df=FeatureTools.remove_ids(
+        df = FeatureTools.remove_ids(
             df,
             schema
         )
@@ -29,31 +30,39 @@ class FeatureAgent:
             df.shape
         )
 
+        # =====================================
+        # Semantic cleaning
+        # =====================================
 
-
-        df=FeatureTools.process_semantic_values(
-    df,
-    semantic_schema
-)
+        df = FeatureTools.process_semantic_values(
+            df,
+            semantic_schema
+        )
 
         print(
             "After semantic processing:",
             df.shape
         )
 
-        df=FeatureTools.convert_semantic_numeric(
+        # =====================================
+        # Convert semantic numerics
+        # =====================================
+
+        df = FeatureTools.convert_semantic_numeric(
             df,
             semantic_schema
         )
 
         print(
-        "After semantic numeric conversion:",
-        df.shape
+            "After semantic numeric conversion:",
+            df.shape
         )
 
+        # =====================================
+        # Process dates
+        # =====================================
 
-
-        df=FeatureTools.process_dates(
+        df = FeatureTools.process_dates(
             df,
             schema
         )
@@ -63,9 +72,11 @@ class FeatureAgent:
             df.shape
         )
 
+        # =====================================
+        # Cyclical features
+        # =====================================
 
-
-        df=FeatureTools.process_cyclical_features(
+        df = FeatureTools.process_cyclical_features(
             df
         )
 
@@ -74,7 +85,11 @@ class FeatureAgent:
             df.shape
         )
 
-        df=FeatureTools.handle_missing(
+        # =====================================
+        # Missing values
+        # =====================================
+
+        df = FeatureTools.handle_missing(
             df
         )
 
@@ -83,9 +98,11 @@ class FeatureAgent:
             df.shape
         )
 
+        # =====================================
+        # Normalize categories
+        # =====================================
 
-
-        df=FeatureTools.normalize_categories(
+        df = FeatureTools.normalize_categories(
             df
         )
 
@@ -94,7 +111,9 @@ class FeatureAgent:
             df.shape
         )
 
-
+        # =====================================
+        # Encode target
+        # =====================================
 
         if (
 
@@ -104,7 +123,7 @@ class FeatureAgent:
 
         ):
 
-            df=FeatureTools.encode_target(
+            df = FeatureTools.encode_target(
                 df,
                 target
             )
@@ -114,6 +133,9 @@ class FeatureAgent:
             df.shape
         )
 
+        # =====================================
+        # ONLY SAFE preprocessing here
+        # =====================================
 
         for step in steps:
 
@@ -121,55 +143,46 @@ class FeatureAgent:
                 f"\nExecuting: {step}"
             )
 
+            # =================================
+            # Encoding
+            # =================================
 
-            if step=="encoding":
+            if step == "encoding":
 
-                df=FeatureTools.encode(
+                df = FeatureTools.encode(
                     df,
                     target
                 )
 
+            # =================================
+            # SKIP scaling here
+            # =================================
 
-            elif step=="scaling":
+            elif step == "scaling":
 
-                df=FeatureTools.scale(
-                    df,
-                    target,
-                    schema
+                print(
+                    "Scaling deferred to TrainingAgent"
                 )
 
+            # =================================
+            # SKIP SMOTE here
+            # =================================
 
-            elif step=="smote":
+            elif step == "smote":
 
-                if (
+                print(
+                    "SMOTE deferred to TrainingAgent"
+                )
 
-                    target
-                    and
-                    target in df.columns
+            # =================================
+            # SKIP PCA here
+            # =================================
 
-                ):
+            elif step == "pca":
 
-                    df=FeatureTools.apply_smote(
-                        df,
-                        target
-                    )
-
-
-            elif step=="pca":
-
-                if (
-
-                    target
-                    and
-                    target in df.columns
-
-                ):
-
-                    df=FeatureTools.apply_pca(
-                        df,
-                        target
-                    )
-
+                print(
+                    "PCA deferred to TrainingAgent"
+                )
 
             else:
 
@@ -177,12 +190,10 @@ class FeatureAgent:
                     f"Unknown step skipped: {step}"
                 )
 
-
             print(
                 "Current shape:",
                 df.shape
             )
-
 
         print(
             "\n===== FeatureAgent Finished ====="
