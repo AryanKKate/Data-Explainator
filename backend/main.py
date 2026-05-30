@@ -3,7 +3,7 @@ from graphs.analyst_graph import app
 
 
 df=DataLoader.load(
-"data/sample.csv"
+"data/housing.csv"
 )
 
 
@@ -14,8 +14,7 @@ result=app.invoke({
 "profile":{},
 
 "user_query":
-"Predict inventory status using all available product, warehouse, supplier, pricing, quantity, and restocking information. Automatically clean inconsistent values, detect semantic column meanings, engineer useful features, select the best ML model adaptively, and explain the most important factors affecting stock status."
-
+"Devlop a regression model to predict the house prices. Preprocess data in any way to find necessary to obtaain the best results"
 })
 print(
     result[

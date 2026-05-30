@@ -199,4 +199,17 @@ class FeatureAgent:
             "\n===== FeatureAgent Finished ====="
         )
 
+        import os
+
+        os.makedirs("data", exist_ok=True)
+
+        df.to_csv(
+            "data/preprocessed_data.csv",
+            index=False
+        )
+
+        print(
+            "\nSaved preprocessed data to data/preprocessed_data.csv"
+        )
+
         return df

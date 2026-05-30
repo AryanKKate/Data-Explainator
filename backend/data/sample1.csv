@@ -4,7 +4,7 @@ customer_id,age,gender,region,monthly_spend,support_tickets,last_login,subscript
 1003,29,male,North,,5,2026/01/15,Premium,Yes
 1004,45,Female,south,1200,0,15-Jan-2026,Premium,No
 1005,31,,West,500,3,2026-01-20,Basic,Yes
-1006,52,Male,East,1500,7,2026-01-22,Premium,Yes
+1006,52,Male,East,1500,7,2026-01-22,Premium,Yes         
 1007,22,Female,North,300,1,22/01/2026,basic,No
 1008,38,Male,South,850,,2026-01-25,Premium,No
 1009,27,Female,west,400,4,2026/01/27,Premium,Yes

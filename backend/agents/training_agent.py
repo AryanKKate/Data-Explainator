@@ -13,13 +13,17 @@ from sklearn.metrics import (
     roc_auc_score,
     r2_score,
     mean_squared_error,
-    mean_absolute_error
+    mean_absolute_error,
+    confusion_matrix
 )
 
 from sklearn.ensemble import (
     RandomForestClassifier,
     RandomForestRegressor
 )
+
+from catboost import CatBoostRegressor
+from xgboost import XGBRegressor
 
 from sklearn.linear_model import (
     LogisticRegression,
@@ -145,17 +149,17 @@ class TrainingAgent:
         # Debug distributions
         # ==================================
 
-        print("\nTrain class distribution:")
-        print(y_train.value_counts())
+            print("\nTrain class distribution:")
+            print(y_train.value_counts())
 
-        print("\nTest class distribution:")
-        print(y_test.value_counts())
+
 
         # ==================================
         # Model storage
         # ==================================
 
         results = {}
+        trained_models = {}
 
         best_model = None
 
@@ -175,13 +179,15 @@ class TrainingAgent:
                 RandomForestClassifier(
                     random_state=42,
                     n_estimators=200,
-                    max_depth=10
+                    max_depth=10,
+                    class_weight="balanced"
                 ),
 
                 "logistic_regression":
                 LogisticRegression(
                     random_state=42,
-                    max_iter=3000
+                    max_iter=3000,
+                    class_weight="balanced"
                 )
 
             }
@@ -262,7 +268,21 @@ class TrainingAgent:
                 ),
 
                 "linear_regression":
-                LinearRegression()
+                LinearRegression(),
+
+                "xgboost":
+                XGBRegressor(
+                random_state=42),
+
+                "catboost":
+                CatBoostRegressor(
+        verbose=0,
+        random_state=42
+    )
+
+                
+
+                
 
             }
 
@@ -294,6 +314,9 @@ class TrainingAgent:
                     X_train,
                     y_train
                 )
+                trained_models[
+                    model_name
+                ] = model
 
                 # ======================
                 # Predict
@@ -344,6 +367,12 @@ class TrainingAgent:
                         average=average_type,
                         zero_division=0
                     )
+                    cm = confusion_matrix(
+                        y_test,
+                        pred
+                    )
+
+
 
                     result = {
 
@@ -369,6 +398,9 @@ class TrainingAgent:
                         round(
                             f1,
                             3
+                        ),
+                        "confusion_matrix":(
+                            cm.tolist()
                         )
 
                     }
@@ -436,8 +468,20 @@ class TrainingAgent:
 
                         try:
 
+                            min_class_size = (
+                            y.value_counts().min()
+                        )
+
+                            n_splits = min(
+                                5,
+                                min_class_size
+                            )
+
+                            if n_splits < 2:
+                                n_splits = 2
+
                             cv = StratifiedKFold(
-                                n_splits=3,
+                                n_splits=n_splits,
                                 shuffle=True,
                                 random_state=42
                             )
@@ -581,11 +625,19 @@ class TrainingAgent:
 
                         try:
 
-                            cv = KFold(
-                                n_splits=3,
-                                shuffle=True,
-                                random_state=42
+                            n_splits = min(
+                                5,
+                                len(X)
                             )
+
+                            if n_splits < 2:
+                                n_splits = 2
+
+                            cv = KFold(
+                            n_splits=n_splits,
+                            shuffle=True,
+                            random_state=42
+                        )
 
                             cv_scores = (
                                 cross_val_score(
@@ -617,6 +669,36 @@ class TrainingAgent:
                                 f"CV failed: {e}"
                             )
 
+                    if hasattr(
+                            model,
+                            "feature_importances_"
+                        ):
+
+                            importance_dict = dict(
+
+                                zip(
+
+                                    X.columns,
+
+                                    model.feature_importances_
+
+                                )
+
+                            )
+
+                            result["top_features"] = dict(
+
+                                sorted(
+
+                                    importance_dict.items(),
+
+                                    key=lambda x: x[1],
+
+                                    reverse=True
+
+                                )[:10]
+
+                            )
                     results[
                         model_name
                     ] = result
@@ -656,6 +738,9 @@ class TrainingAgent:
             best_model,
 
             "results":
-            results
+            results,
+
+            "trained_models":
+            trained_models
 
         }
