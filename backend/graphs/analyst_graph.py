@@ -4,7 +4,7 @@ import pandas as pd
 from services.clean_data import DataCleaner
 from services.profile_data import DataProfiler
 
-from langgraph.graph import StateGraph
+from langgraph.graph import StateGraph,END
 
 from agents.intent_agent import IntentAgent
 from agents.planning_agent import PlanningAgent
@@ -14,7 +14,9 @@ from agents.validation_agent import ValidationAgent
 from agents.model_selection import ModelSelectionAgent
 from agents.training_agent import TrainingAgent
 from agents.semantic_agent import SemanticAgent
-
+from agents.explainability_agent import ExplainabilityAgent
+from agents.insight_agent import InsightAgent
+from agents.recommendation_agent import RecommendationAgent
 
 class GraphState(TypedDict):
 
@@ -41,6 +43,12 @@ class GraphState(TypedDict):
     model_plan: dict
 
     training_results: dict
+
+    explanation: str
+
+    insights: dict
+
+    recommendations: dict
 
 
 def clean_node(state):
@@ -232,6 +240,86 @@ def training_node(state):
 
     }
 
+def explainability_node(state):
+
+    explanation = (
+        ExplainabilityAgent.generate(
+
+            target=state["target_column"],
+
+            schema=state["schema"],
+
+            semantic_schema=state["semantic_schema"],
+
+            training_results=state["training_results"],
+
+            insights=state["insights"],
+
+            recommendations=state["recommendations"]
+
+        )
+    )
+
+    return {
+        "explanation": explanation
+    }
+
+def insight_node(state):
+
+    insights = (
+        InsightAgent.generate(
+
+            training_results=
+            state["training_results"],
+
+            profile=
+            state["profile"],
+
+            target=
+            state["target_column"]
+
+        )
+    )
+
+    return {
+
+        "insights":
+        insights
+
+    }
+
+
+def recommendation_node(state):
+
+    recommendations = (
+        RecommendationAgent.generate(
+
+            task=state["task_type"],
+
+            target=state["target_column"],
+
+            insights=state["insights"],
+
+            semantic_schema=state[
+                "semantic_schema"
+            ],
+
+            training_results=state[
+                "training_results"
+            ],
+
+            query=state["user_query"]
+
+
+        )
+    )
+
+    return {
+
+        "recommendations":
+        recommendations
+
+    }
 
 workflow = StateGraph(
     GraphState
@@ -288,6 +376,21 @@ workflow.add_node(
     training_node
 )
 
+workflow.add_node(
+    "explainability",
+    explainability_node
+)
+
+workflow.add_node(
+    "insight",
+    insight_node
+)
+
+workflow.add_node(
+    "recommendation",
+    recommendation_node
+)
+
 
 workflow.set_entry_point(
     "clean"
@@ -340,8 +443,26 @@ workflow.add_edge(
 )
 
 
-workflow.set_finish_point(
-    "training"
+workflow.add_edge(
+    "training",
+    "insight"
+)
+
+
+workflow.add_edge(
+    "insight",
+    "recommendation"
+)
+
+workflow.add_edge(
+    "recommendation",
+    "explainability"
+)
+
+workflow.add_edge(
+    "explainability",
+    END
+    
 )
 
 
