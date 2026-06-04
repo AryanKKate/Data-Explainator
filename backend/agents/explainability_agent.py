@@ -1,81 +1,129 @@
-from utils.llm import llm
+import shap
+import numpy as np
 
 
 class ExplainabilityAgent:
 
     @staticmethod
-    def generate(
-
-        target,
-        schema,
-        semantic_schema,
-        training_results,
-        insights,
-        recommendations
-
-    ):
+    def generate(training_results):
 
         best_model = training_results[
             "best_model"
         ]
 
-        result = training_results[
-            "results"
+        model = training_results[
+            "trained_models"
         ][best_model]
 
-        top_features = result.get(
-            "top_features",
-            {}
-        )
+        X_test = training_results[
+            "X_test"
+        ]
 
-        prompt = f"""
+        feature_names = training_results[
+            "feature_names"
+        ]
 
-You are a senior data analyst.
+        try:
 
-Target variable:
+            explainer = shap.Explainer(
+                model,
+                X_test
+            )
 
-{target}
+            shap_values = explainer(
+                X_test
+            )
 
-Model Used:
+            importance = np.abs(
+                shap_values.values
+            ).mean(axis=0)
 
-{best_model}
+            feature_impact = dict(
 
-Model Metrics:
+                sorted(
 
-{result}
+                    zip(
+                        feature_names,
+                        importance
+                    ),
 
-Feature Information:
+                    key=lambda x: x[1],
 
-{semantic_schema}
+                    reverse=True
 
-Insights:
-{insights}
+                )
 
-Top Features:
+            )
 
-{top_features}
+            feature_impact = dict(
 
-Recommendations:
-{recommendations}
+                list(
+                    feature_impact.items()
+                )[:10]
 
-Generate:
+            )
 
-1. Model performance summary
+            driver_insights = [
 
-2. Key drivers
+                f"{feature} strongly influences predictions"
 
-3. Business insights
+                for feature in list(
+                    feature_impact.keys()
+                )[:5]
 
-4. Risks / limitations
+            ]
 
-5. Recommendations
+            sample_idx = 0
 
-Keep response concise and professional.
+            contributions = dict(
 
-"""
+                zip(
 
-        response = llm.invoke(
-            prompt
-        )
+                    feature_names,
 
-        return response.content
+                    shap_values.values[
+                        sample_idx
+                    ]
+
+                )
+
+            )
+
+            sample_explanation = sorted(
+
+                contributions.items(),
+
+                key=lambda x: abs(x[1]),
+
+                reverse=True
+
+            )[:5]
+
+            return {
+
+                "feature_impact":
+                feature_impact,
+
+                "driver_insights":
+                driver_insights,
+
+                "sample_explanation":
+                sample_explanation
+
+            }
+
+        except Exception as e:
+
+            print(
+                f"SHAP failed: {e}"
+            )
+
+            return {
+
+                "feature_impact": {},
+
+                "driver_insights": [],
+
+                "sample_explanation": []
+
+            }

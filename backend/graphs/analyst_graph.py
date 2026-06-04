@@ -17,6 +17,7 @@ from agents.semantic_agent import SemanticAgent
 from agents.explainability_agent import ExplainabilityAgent
 from agents.insight_agent import InsightAgent
 from agents.recommendation_agent import RecommendationAgent
+from agents.executive_summary_agent import ExecutiveSummaryAgent
 
 class GraphState(TypedDict):
 
@@ -46,9 +47,13 @@ class GraphState(TypedDict):
 
     explanation: str
 
-    insights: dict
+    explainability_report: dict
 
-    recommendations: dict
+    insights: list
+
+    recommendations: list
+
+    executive_summary: str
 
 
 def clean_node(state):
@@ -242,26 +247,23 @@ def training_node(state):
 
 def explainability_node(state):
 
-    explanation = (
+    report = (
+
         ExplainabilityAgent.generate(
 
-            target=state["target_column"],
-
-            schema=state["schema"],
-
-            semantic_schema=state["semantic_schema"],
-
-            training_results=state["training_results"],
-
-            insights=state["insights"],
-
-            recommendations=state["recommendations"]
+            state[
+                "training_results"
+            ]
 
         )
+
     )
 
     return {
-        "explanation": explanation
+
+        "explainability_report":
+        report
+
     }
 
 def insight_node(state):
@@ -276,7 +278,10 @@ def insight_node(state):
             state["profile"],
 
             target=
-            state["target_column"]
+            state["target_column"],
+
+            explainability_report=
+            state["explainability_report"]
 
         )
     )
@@ -308,7 +313,14 @@ def recommendation_node(state):
                 "training_results"
             ],
 
-            query=state["user_query"]
+            query=state["user_query"],
+
+
+            explainability_report=state[
+                "explainability_report"],
+
+            validation_report=state[
+                "validation_report"]
 
 
         )
@@ -318,6 +330,34 @@ def recommendation_node(state):
 
         "recommendations":
         recommendations
+
+    }
+
+def executive_summary_node(state):
+
+    summary = ExecutiveSummaryAgent.generate(
+
+        target=state["target_column"],
+
+        task=state["task_type"],
+
+        training_results=state["training_results"],
+
+        insights=state["insights"],
+
+        recommendations=state["recommendations"],
+
+        explainability_report=
+        state["explainability_report"],
+
+        semantic_schema=state["semantic_schema"]
+
+    )
+
+    return {
+
+        "executive_summary":
+        summary
 
     }
 
@@ -391,6 +431,10 @@ workflow.add_node(
     recommendation_node
 )
 
+workflow.add_node(
+    "executive_summary",
+    executive_summary_node
+)
 
 workflow.set_entry_point(
     "clean"
@@ -445,6 +489,11 @@ workflow.add_edge(
 
 workflow.add_edge(
     "training",
+    "explainability"
+)
+
+workflow.add_edge(
+    "explainability",
     "insight"
 )
 
@@ -456,13 +505,12 @@ workflow.add_edge(
 
 workflow.add_edge(
     "recommendation",
-    "explainability"
+    "executive_summary"
 )
 
 workflow.add_edge(
-    "explainability",
+    "executive_summary",
     END
-    
 )
 
 

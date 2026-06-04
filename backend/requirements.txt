@@ -68,3 +68,5 @@ xgboost
 lightgbm 
 catboost
 joblib
+
+shap

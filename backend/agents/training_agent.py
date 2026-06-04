@@ -844,6 +844,9 @@ class TrainingAgent:
         y_train,
 
         "y_test":
-        y_test
+        y_test,
+
+        "feature_names": 
+        list(X.columns)
 
     }

@@ -123,94 +123,20 @@ for model, metrics in result[
                 f"{key}: {value}"
             )
 
-# =====================================================
-# FEATURE IMPORTANCE
-# =====================================================
 
-print("\n" + "="*70)
-print("TOP FEATURES")
-print("="*70)
 
-best_metrics = result[
-    "training_results"
-]["results"][best_model]
+print(
+    result["explainability_report"]
+)
 
-if "top_features" in best_metrics:
+print(
+    result["insights"]
+)
 
-    for feature, score in best_metrics[
-        "top_features"
-    ].items():
+print(
+    result["recommendations"]
+)
 
-        print(
-            f"{feature}: {score}"
-        )
-
-# =====================================================
-# INSIGHTS
-# =====================================================
-
-if "insights" in result:
-
-    print("\n" + "="*70)
-    print("INSIGHTS")
-    print("="*70)
-
-    insights = result["insights"]
-
-    if isinstance(insights, dict):
-
-        for item in insights.get(
-            "insights",
-            []
-        ):
-
-            print(f"• {item}")
-
-    else:
-
-        print(insights)
-
-# =====================================================
-# RECOMMENDATIONS
-# =====================================================
-
-if "recommendations" in result:
-
-    print("\n" + "="*70)
-    print("RECOMMENDATIONS")
-    print("="*70)
-
-    recommendations = result[
-        "recommendations"
-    ]
-
-    if isinstance(
-        recommendations,
-        dict
-    ):
-
-        for rec in recommendations.get(
-            "recommendations",
-            []
-        ):
-
-            print(f"✓ {rec}")
-
-    else:
-
-        print(recommendations)
-
-# =====================================================
-# EXPLANATION
-# =====================================================
-
-if "explanation" in result:
-
-    print("\n" + "="*70)
-    print("EXECUTIVE SUMMARY")
-    print("="*70)
-
-    print(
-        result["explanation"]
-    )
-
+print(
+    result["executive_summary"]
+)

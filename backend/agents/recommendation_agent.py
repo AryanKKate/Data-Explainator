@@ -17,7 +17,9 @@ class RecommendationAgent:
         insights,
         semantic_schema,
         training_results,
-        query
+        query,
+        explainability_report,
+        validation_report
     ):
 
         best_model = training_results.get(
@@ -51,6 +53,12 @@ Best Model:
 
 Metrics:
 {model_metrics}
+
+Explainability Report:
+{explainability_report}
+
+Validation Report:
+{validation_report}
 
 User has asked the following query. Based on the query, insights, and model performance, generate 5 actionable business recommendations.:
 {query}
