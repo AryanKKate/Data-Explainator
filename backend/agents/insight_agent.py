@@ -2,137 +2,104 @@ class InsightAgent:
 
     @staticmethod
     def generate(
+
         training_results,
-        profile,
-        target,
-        explainability_report=None
+        explainability_report,
+        target
+
     ):
-
-        best_model = training_results["best_model"]
-
-        result = training_results["results"][best_model]
 
         insights = []
 
-        top_drivers = []
+        impacts = (
+            explainability_report[
+                "feature_impact"
+            ]
+        )
 
-        # -------------------------
-        # Feature based insights
-        # -------------------------
+        total = sum(
+            impacts.values()
+        )
 
-        if "top_features" in result:
+        for feature,value in list(
+            impacts.items()
+        )[:5]:
 
-            top_drivers = list(
-                result["top_features"].keys()
-            )[:5]
+            pct = round(
 
-            for feature in top_drivers:
+                (
+                    value
+                    /
+                    total
+                ) * 100,
 
-                insights.append({
+                1
+            )
 
-                    "type":
-                    "feature_driver",
+            insights.append({
 
-                    "feature":
-                    feature,
+                "type":
+                "business_driver",
 
-                    "message":
-                    f"{feature} strongly influences {target}"
+                "feature":
+                feature,
 
-                })
+                "importance":
+                pct,
 
-        # -------------------------
-        # Model quality insights
-        # -------------------------
+                "message":
+                f"{feature} explains {pct}% of model decisions"
 
-        if "r2" in result:
+            })
 
-            r2 = result["r2"]
+        best_model = training_results[
+            "best_model"
+        ]
 
-            if r2 >= 0.8:
+        result = training_results[
+            "results"
+        ][best_model]
 
-                insights.append({
+        r2 = result.get(
+            "r2"
+        )
 
-                    "type":
-                    "model_quality",
+        if r2:
 
-                    "message":
-                    "Model explains most variation in the target."
+            if r2 > 0.8:
 
-                })
+                quality = (
+                    "strong"
+                )
 
-            elif r2 >= 0.6:
+            elif r2 > 0.6:
 
-                insights.append({
-
-                    "type":
-                    "model_quality",
-
-                    "message":
-                    "Model has moderate predictive power."
-
-                })
+                quality = (
+                    "moderate"
+                )
 
             else:
 
-                insights.append({
-
-                    "type":
-                    "model_quality",
-
-                    "message":
-                    "Model accuracy is limited. Additional features may be required."
-
-                })
-
-        # -------------------------
-        # Error analysis
-        # -------------------------
-
-        if "mean_error" in result:
+                quality = (
+                    "weak"
+                )
 
             insights.append({
 
                 "type":
-                "error",
+                "model_quality",
 
                 "message":
-                f"Average prediction error is {result['mean_error']:,.0f}"
-
-            })
-
-        if "max_error" in result:
-
-            insights.append({
-
-                "type":
-                "risk",
-
-                "message":
-                f"Worst prediction error observed was {result['max_error']:,.0f}"
-
-            })
-
-        # -------------------------
-        # Dataset observations
-        # -------------------------
-
-        if profile:
-
-            insights.append({
-
-                "type":
-                "dataset",
-
-                "message":
-                f"Dataset contains {profile.get('rows', 'unknown')} records."
+                f"Model has {quality} predictive power"
 
             })
 
         return {
 
             "top_drivers":
-            top_drivers,
+            list(
+                impacts.keys()
+            )[:5],
 
             "insights":
             insights

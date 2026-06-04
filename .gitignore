@@ -72,3 +72,5 @@ temp/
 
 backend/catboost_info
 backend/data
+
+backend/outputs

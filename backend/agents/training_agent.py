@@ -194,6 +194,8 @@ class TrainingAgent:
 
         available_models = {}
 
+        predictions = {}
+
         # ==================================
         # Classification models
         # ==================================
@@ -340,7 +342,7 @@ class TrainingAgent:
                 # ======================
                 # Train
                 # ======================
-
+                
                 model.fit(
                     X_train,
                     y_train
@@ -356,6 +358,9 @@ class TrainingAgent:
                 pred = model.predict(
                     X_test
                 )
+                predictions[
+    model_name
+] = pred
 
                 # ====================================================
                 # CLASSIFICATION
@@ -813,6 +818,7 @@ class TrainingAgent:
                             model_name
                         )
 
+
             except Exception as e:
 
                 print(
@@ -823,30 +829,49 @@ class TrainingAgent:
         # Final Output
         # ==================================
 
+        if best_model is not None:
+
+            best_predictions = trained_models[
+                best_model
+            ].predict(
+                X_test
+            )
+
+        else:
+
+            best_predictions = None
+
+            
         return {
 
-        "best_model":
-        best_model,
+            "best_model":
+            best_model,
 
-        "results":
-        results,
+            "results":
+            results,
 
-        "trained_models":
-        trained_models,
+            "trained_models":
+            trained_models,
 
-        "X_train":
-        X_train,
+            "predictions":
+            predictions,
 
-        "X_test":
-        X_test,
+            "best_predictions":
+            best_predictions,
 
-        "y_train":
-        y_train,
+            "feature_names":
+            list(X.columns),
 
-        "y_test":
-        y_test,
+            "X_train":
+            X_train,
 
-        "feature_names": 
-        list(X.columns)
+            "X_test":
+            X_test,
 
-    }
+            "y_train":
+            y_train,
+
+            "y_test":
+            y_test
+
+        }

@@ -18,6 +18,8 @@ from agents.explainability_agent import ExplainabilityAgent
 from agents.insight_agent import InsightAgent
 from agents.recommendation_agent import RecommendationAgent
 from agents.executive_summary_agent import ExecutiveSummaryAgent
+from agents.visualization_agent import VisualizationAgent
+
 
 class GraphState(TypedDict):
 
@@ -54,6 +56,8 @@ class GraphState(TypedDict):
     recommendations: list
 
     executive_summary: str
+
+    visualizations: dict
 
 
 def clean_node(state):
@@ -274,14 +278,13 @@ def insight_node(state):
             training_results=
             state["training_results"],
 
-            profile=
-            state["profile"],
+            explainability_report=
+            state["explainability_report"],
 
             target=
-            state["target_column"],
+            state["target_column"]
 
-            explainability_report=
-            state["explainability_report"]
+
 
         )
     )
@@ -361,6 +364,29 @@ def executive_summary_node(state):
 
     }
 
+def visualization_node(
+    state
+):
+
+    return {
+
+        "visualizations":
+
+        VisualizationAgent.generate(
+
+            training_results=
+            state[
+                "training_results"
+            ]
+
+            # target=
+            # state[
+            #     "target_column"
+            # ]
+
+        )
+    }
+
 workflow = StateGraph(
     GraphState
 )
@@ -436,6 +462,11 @@ workflow.add_node(
     executive_summary_node
 )
 
+workflow.add_node(
+    "visualization",
+    visualization_node
+)
+
 workflow.set_entry_point(
     "clean"
 )
@@ -494,6 +525,11 @@ workflow.add_edge(
 
 workflow.add_edge(
     "explainability",
+    "visualization"
+)
+
+workflow.add_edge(
+    "visualization",
     "insight"
 )
 
