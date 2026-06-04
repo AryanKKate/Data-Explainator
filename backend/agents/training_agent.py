@@ -54,6 +54,33 @@ class TrainingAgent:
             columns=[target]
         )
 
+        X = X.replace(
+    [np.inf, -np.inf],
+    np.nan
+)
+
+        if X.isna().sum().sum() > 0:
+
+            print(
+                "\nNaNs detected before training"
+            )
+
+            print(
+                X.isna().sum()
+                .sort_values(
+                    ascending=False
+                )
+                .head(20)
+            )
+
+            X = X.fillna(
+                X.median(
+                    numeric_only=True
+                )
+            )
+
+            X = X.fillna("missing")
+
         assert target not in X.columns
 
         task = model_plan["task"]
@@ -270,9 +297,13 @@ class TrainingAgent:
                 "linear_regression":
                 LinearRegression(),
 
-                "xgboost":
+                "XGBOOST_Regression":
                 XGBRegressor(
-                random_state=42),
+                random_state=42,
+                n_estimators=500,
+                learning_rate=0.05,
+                max_depth=6
+            ),
 
                 "catboost":
                 CatBoostRegressor(
@@ -592,6 +623,18 @@ class TrainingAgent:
                         pred
                     )
 
+                    errors = np.abs(
+                        y_test - pred
+                    )
+
+                    mean_error = (
+                        errors.mean()
+                    )
+
+                    max_error = (
+                        errors.max()
+                    )
+
                     result = {
 
                         "rmse":
@@ -609,6 +652,17 @@ class TrainingAgent:
                         "r2":
                         round(
                             r2,
+                            3
+                        ),
+                        "mean_error":
+                        round(
+                            mean_error,
+                            3
+                        ),
+
+                        "max_error":
+                        round(
+                            max_error,
                             3
                         )
 
@@ -670,35 +724,72 @@ class TrainingAgent:
                             )
 
                     if hasattr(
-                            model,
-                            "feature_importances_"
-                        ):
+                        model,
+                        "feature_importances_"
+                    ):
 
-                            importance_dict = dict(
+                        importance_dict = dict(
 
-                                zip(
+                            zip(
 
-                                    X.columns,
+                                X.columns,
 
-                                    model.feature_importances_
+                                model.feature_importances_
 
+                            )
+
+                        )
+
+                        result[
+                            "top_features"
+                        ] = dict(
+
+                            sorted(
+
+                                importance_dict.items(),
+
+                                key=lambda x: x[1],
+
+                                reverse=True
+
+                            )[:10]
+
+                        )
+
+                    elif hasattr(
+                        model,
+                        "coef_"
+                    ):
+
+                        coef_dict = dict(
+
+                            zip(
+
+                                X.columns,
+
+                                np.abs(
+                                    model.coef_
                                 )
 
                             )
 
-                            result["top_features"] = dict(
+                        )
 
-                                sorted(
+                        result[
+                            "top_features"
+                        ] = dict(
 
-                                    importance_dict.items(),
+                            sorted(
 
-                                    key=lambda x: x[1],
+                                coef_dict.items(),
 
-                                    reverse=True
+                                key=lambda x: x[1],
 
-                                )[:10]
+                                reverse=True
 
-                            )
+                            )[:10]
+
+                        )
                     results[
                         model_name
                     ] = result
@@ -734,13 +825,25 @@ class TrainingAgent:
 
         return {
 
-            "best_model":
-            best_model,
+        "best_model":
+        best_model,
 
-            "results":
-            results,
+        "results":
+        results,
 
-            "trained_models":
-            trained_models
+        "trained_models":
+        trained_models,
 
-        }
+        "X_train":
+        X_train,
+
+        "X_test":
+        X_test,
+
+        "y_train":
+        y_train,
+
+        "y_test":
+        y_test
+
+    }

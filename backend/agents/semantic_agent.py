@@ -320,9 +320,13 @@ class SemanticAgent:
             for semantic in priority_order:
 
                 keywords = semantic_patterns[semantic]
-
+                
+                tokens = re.split(
+                r"[_\s\-]+",
+                col_lower
+            )
                 if any(
-                    keyword in col_lower
+                    keyword in tokens
                     for keyword in keywords
                 ):
 
@@ -349,5 +353,6 @@ class SemanticAgent:
                     info["confidence"] = 0.98
 
             semantic_schema[col] = info
+
 
         return semantic_schema

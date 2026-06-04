@@ -65,19 +65,7 @@ Rules:
 - Keep each recommendation under 20 words.
 - Focus on business impact.
 
-Examples:
 
-House Pricing:
-- Target high-income neighborhoods.
-- Focus marketing in high population regions.
-
-Inventory:
-- Replenish products with recurring low stock.
-- Review suppliers linked to stockouts.
-
-Customer Churn:
-- Retain customers with declining engagement.
-- Investigate high-risk customer segments.
 """
 
         structured_llm = (
