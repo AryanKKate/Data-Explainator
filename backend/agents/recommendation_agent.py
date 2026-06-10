@@ -19,7 +19,6 @@ class RecommendationAgent:
 
     @staticmethod
     def generate(
-
         task,
         target,
         insights,
@@ -27,8 +26,9 @@ class RecommendationAgent:
         training_results,
         query,
         explainability_report,
-        validation_report
-
+        validation_report,
+        business_intelligence,
+        visualizations
     ):
 
         best_model = training_results.get(

@@ -5,11 +5,16 @@ class InsightAgent:
 
         training_results,
         explainability_report,
+        business_intelligence,
         target
 
     ):
 
         insights = []
+
+        # =====================================
+        # SHAP Drivers
+        # =====================================
 
         importance = (
 
@@ -20,35 +25,147 @@ class InsightAgent:
 
         )
 
-        # ==========================
-        # Business Drivers
-        # ==========================
-
-        for feature,pct in list(
-
+        for feature, pct in list(
             importance.items()
-
         )[:5]:
 
             insights.append({
 
                 "type":
-                "business_driver",
+                "driver",
 
-                "feature":
-                feature,
+                "headline":
+                f"{feature} is a key driver",
 
-                "importance":
-                pct,
+                "evidence":
+                f"Explains {pct}% of model behavior",
 
-                "message":
-                f"{feature} explains {pct}% of model decisions"
+                "confidence":
+                round(
+                    pct / 100,
+                    2
+                )
 
             })
 
-        # ==========================
-        # Model Metrics
-        # ==========================
+        # =====================================
+        # Statistical Opportunities
+        # =====================================
+
+        statistical_findings = (
+
+            business_intelligence
+            .get(
+                "statistical_findings",
+                {}
+            )
+            .get(
+                "driver_analysis",
+                []
+            )
+
+        )
+
+        for item in statistical_findings[:5]:
+
+            insights.append({
+
+                "type":
+                "opportunity",
+
+                "headline":
+                f"{item['feature']} creates value",
+
+                "evidence":
+                f"{item['uplift_pct']}% uplift",
+
+                "confidence":
+                round(
+                    max(
+                        0.5,
+                        1 - item["p_value"]
+                    ),
+                    2
+                )
+
+            })
+
+        # =====================================
+        # Best Segment
+        # =====================================
+
+        segments = (
+
+            business_intelligence
+            .get(
+                "segments",
+                {}
+            )
+            .get(
+                "segments",
+                []
+            )
+
+        )
+
+        if len(segments) > 0:
+
+            best_segment = segments[0]
+
+            insights.append({
+
+                "type":
+                "segment",
+
+                "headline":
+                f"{best_segment['segment']} is highest value",
+
+                "evidence":
+                f"{best_segment['uplift_pct']}% above average",
+
+                "confidence":
+                0.9
+
+            })
+
+        # =====================================
+        # Data Quality
+        # =====================================
+
+        quality = business_intelligence.get(
+            "data_quality",
+            {}
+        )
+
+        quality_score = quality.get(
+            "overall_score",
+            None
+        )
+
+        if quality_score is not None:
+
+            insights.append({
+
+                "type":
+                "quality",
+
+                "headline":
+                "Data Quality Score",
+
+                "evidence":
+                f"{quality_score}/100",
+
+                "confidence":
+                round(
+                    quality_score / 100,
+                    2
+                )
+
+            })
+
+        # =====================================
+        # Model Reliability
+        # =====================================
 
         best_model = training_results[
             "best_model"
@@ -58,160 +175,74 @@ class InsightAgent:
             "results"
         ][best_model]
 
-        # ==========================
-        # Regression Insights
-        # ==========================
-
         if "r2" in result:
 
-            r2 = result["r2"]
+            reliability = result["r2"]
 
-            if r2 >= 0.80:
+            metric_name = "R²"
 
-                quality = "strong"
+        else:
 
-            elif r2 >= 0.60:
+            reliability = result.get(
+                "f1",
+                0
+            )
 
-                quality = "moderate"
+            metric_name = "F1"
 
-            else:
+        insights.append({
 
-                quality = "weak"
+            "type":
+            "model",
 
-            insights.append({
+            "headline":
+            "Model Reliability",
 
-                "type":
-                "model_quality",
+            "evidence":
+            f"{metric_name} = {round(reliability,3)}",
 
-                "message":
-                f"Model has {quality} predictive power"
+            "confidence":
+            round(
+                reliability,
+                2
+            )
 
-            })
+        })
 
-            insights.append({
+        # =====================================
+        # Trust Score
+        # =====================================
 
-                "type":
-                "error",
-
-                "message":
-                f"Average prediction error is {result['mae']:,.0f}"
-
-            })
-
-            insights.append({
-
-                "type":
-                "risk",
-
-                "message":
-                f"Worst prediction error observed was {result['max_error']:,.0f}"
-
-            })
-
-        # ==========================
-        # Classification Insights
-        # ==========================
-
-        elif "accuracy" in result:
-
-            accuracy = result["accuracy"]
-
-            insights.append({
-
-                "type":
-                "model_quality",
-
-                "message":
-                f"Classification accuracy is {accuracy:.1%}"
-
-            })
-
-            if "f1" in result:
-
-                insights.append({
-
-                    "type":
-                    "f1",
-
-                    "message":
-                    f"F1 Score is {result['f1']:.3f}"
-
-                })
-
-        # ==========================
-        # Explainability Insights
-        # ==========================
-
-        positive = explainability_report.get(
-
-            "most_positive_factors",
-
-            []
-
+        trust = business_intelligence.get(
+            "trust_score",
+            {}
         )
 
-        negative = explainability_report.get(
-
-            "most_negative_factors",
-
-            []
-
-        )
-
-        if positive:
+        if isinstance(trust, dict):
 
             insights.append({
 
                 "type":
-                "positive_factors",
+                "trust",
 
-                "message":
-                f"Top positive contributors: {', '.join(positive[:3])}"
+                "headline":
+                "Prediction Trust Score",
 
-            })
+                "evidence":
+                f"{trust.get('trust_score',0)}/100",
 
-        if negative:
-
-            insights.append({
-
-                "type":
-                "negative_factors",
-
-                "message":
-                f"Top negative contributors: {', '.join(negative[:3])}"
-
-            })
-
-        # ==========================
-        # Dataset Insights
-        # ==========================
-
-        X_train = training_results[
-            "X_train"
-        ]
-
-        if X_train.isnull().sum().sum() > 0:
-
-            insights.append({
-
-                "type":
-                "dataset",
-
-                "message":
-                "Dataset still contains missing values."
+                "confidence":
+                round(
+                    trust.get(
+                        "trust_score",
+                        0
+                    ) / 100,
+                    2
+                )
 
             })
-
-        # ==========================
-        # Final Output
-        # ==========================
 
         return {
-
-            "top_drivers":
-            list(
-                importance.keys()
-            )[:5],
 
             "insights":
             insights

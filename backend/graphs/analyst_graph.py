@@ -19,6 +19,7 @@ from agents.insight_agent import InsightAgent
 from agents.recommendation_agent import RecommendationAgent
 from agents.executive_summary_agent import ExecutiveSummaryAgent
 from agents.visualization_agent import VisualizationAgent
+from agents.business_intelligence_agent import BusinessIntelligenceAgent
 
 
 class GraphState(TypedDict):
@@ -58,6 +59,8 @@ class GraphState(TypedDict):
     executive_summary: str
 
     visualizations: dict
+
+    business_intelligence: dict
 
 
 def clean_node(state):
@@ -273,6 +276,7 @@ def explainability_node(state):
 def insight_node(state):
 
     insights = (
+
         InsightAgent.generate(
 
             training_results=
@@ -281,12 +285,14 @@ def insight_node(state):
             explainability_report=
             state["explainability_report"],
 
+            business_intelligence=
+            state["business_intelligence"],
+
             target=
             state["target_column"]
 
-
-
         )
+
     )
 
     return {
@@ -300,33 +306,41 @@ def insight_node(state):
 def recommendation_node(state):
 
     recommendations = (
+
         RecommendationAgent.generate(
 
-            task=state["task_type"],
+            task=
+            state["task_type"],
 
-            target=state["target_column"],
+            target=
+            state["target_column"],
 
-            insights=state["insights"],
+            insights=
+            state["insights"],
 
-            semantic_schema=state[
-                "semantic_schema"
-            ],
+            semantic_schema=
+            state["semantic_schema"],
 
-            training_results=state[
-                "training_results"
-            ],
+            training_results=
+            state["training_results"],
 
-            query=state["user_query"],
+            query=
+            state["user_query"],
 
+            explainability_report=
+            state["explainability_report"],
 
-            explainability_report=state[
-                "explainability_report"],
+            validation_report=
+            state["validation_report"],
 
-            validation_report=state[
-                "validation_report"]
+            business_intelligence=
+            state["business_intelligence"],
 
+            visualizations=
+            state["visualizations"]
 
         )
+
     )
 
     return {
@@ -335,6 +349,7 @@ def recommendation_node(state):
         recommendations
 
     }
+
 
 def executive_summary_node(state):
 
@@ -364,33 +379,57 @@ def executive_summary_node(state):
 
     }
 
-def visualization_node(
-    state
-):
+def visualization_node(state):
 
-    return {
-
-        "visualizations":
+    visuals = (
 
         VisualizationAgent.generate(
 
             training_results=
-            state[
-                "training_results"
-            ],
+            state["training_results"],
 
             explainability_report=
-            state[
-                "explainability_report"
-            ]
-
-            # target=
-            # state[
-            #     "target_column"
-            # ]
+            state["explainability_report"]
 
         )
+
+    )
+
+    return {
+
+        "visualizations":
+        visuals
+
     }
+
+
+def business_intelligence_node(state):
+
+    result = BusinessIntelligenceAgent.generate(
+
+        engineered_data=
+        state["engineered_data"],
+
+        target=
+        state["target_column"],
+
+        training_results=
+        state["training_results"],
+
+        explainability_report=
+        state["explainability_report"]
+
+
+    )
+
+    return {
+
+        "business_intelligence":
+        result
+
+    }
+
+
 
 workflow = StateGraph(
     GraphState
@@ -472,6 +511,11 @@ workflow.add_node(
     visualization_node
 )
 
+workflow.add_node(
+    "business_intelligence",
+    business_intelligence_node
+)
+
 workflow.set_entry_point(
     "clean"
 )
@@ -530,6 +574,11 @@ workflow.add_edge(
 
 workflow.add_edge(
     "explainability",
+    "business_intelligence"
+)
+
+workflow.add_edge(
+    "business_intelligence",
     "visualization"
 )
 

@@ -74,54 +74,54 @@ result=app.invoke({
 # )
 
 
-print("\n" + "="*70)
-print("TASK")
-print("="*70)
+# print("\n" + "="*70)
+# print("TASK")
+# print("="*70)
 
-print("Task Type:", result["task_type"])
-print("Target:", result["target_column"])
+# print("Task Type:", result["task_type"])
+# print("Target:", result["target_column"])
 
-# =====================================================
-# MODEL PLAN
-# =====================================================
+# # =====================================================
+# # MODEL PLAN
+# # =====================================================
 
-print("\n" + "="*70)
-print("MODEL PLAN")
-print("="*70)
+# print("\n" + "="*70)
+# print("MODEL PLAN")
+# print("="*70)
 
-pprint(result["model_plan"])
+# pprint(result["model_plan"])
 
-# =====================================================
-# TRAINING RESULTS
-# =====================================================
+# # =====================================================
+# # TRAINING RESULTS
+# # =====================================================
 
-print("\n" + "="*70)
-print("MODEL PERFORMANCE")
-print("="*70)
+# print("\n" + "="*70)
+# print("MODEL PERFORMANCE")
+# print("="*70)
 
-best_model = result[
-    "training_results"
-]["best_model"]
+# best_model = result[
+#     "training_results"
+# ]["best_model"]
 
-print(
-    f"\nBest Model: {best_model}"
-)
+# print(
+#     f"\nBest Model: {best_model}"
+# )
 
-for model, metrics in result[
-    "training_results"
-]["results"].items():
+# for model, metrics in result[
+#     "training_results"
+# ]["results"].items():
 
-    print("\n" + "-"*50)
-    print(model.upper())
-    print("-"*50)
+#     print("\n" + "-"*50)
+#     print(model.upper())
+#     print("-"*50)
 
-    for key, value in metrics.items():
+#     for key, value in metrics.items():
 
-        if key != "top_features":
+#         if key != "top_features":
 
-            print(
-                f"{key}: {value}"
-            )
+#             print(
+#                 f"{key}: {value}"
+#             )
 
 
 
