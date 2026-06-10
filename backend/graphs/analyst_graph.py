@@ -377,6 +377,11 @@ def visualization_node(
             training_results=
             state[
                 "training_results"
+            ],
+
+            explainability_report=
+            state[
+                "explainability_report"
             ]
 
             # target=
