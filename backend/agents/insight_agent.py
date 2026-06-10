@@ -11,30 +11,24 @@ class InsightAgent:
 
         insights = []
 
-        impacts = (
-            explainability_report[
-                "feature_impact"
-            ]
-        )
+        importance = (
 
-        total = sum(
-            impacts.values()
-        )
-
-        for feature,value in list(
-            impacts.items()
-        )[:5]:
-
-            pct = round(
-
-                (
-                    value
-                    /
-                    total
-                ) * 100,
-
-                1
+            explainability_report.get(
+                "global_importance_percentages",
+                {}
             )
+
+        )
+
+        # ==========================
+        # Business Drivers
+        # ==========================
+
+        for feature,pct in list(
+
+            importance.items()
+
+        )[:5]:
 
             insights.append({
 
@@ -52,6 +46,10 @@ class InsightAgent:
 
             })
 
+        # ==========================
+        # Model Metrics
+        # ==========================
+
         best_model = training_results[
             "best_model"
         ]
@@ -60,29 +58,25 @@ class InsightAgent:
             "results"
         ][best_model]
 
-        r2 = result.get(
-            "r2"
-        )
+        # ==========================
+        # Regression Insights
+        # ==========================
 
-        if r2:
+        if "r2" in result:
 
-            if r2 > 0.8:
+            r2 = result["r2"]
 
-                quality = (
-                    "strong"
-                )
+            if r2 >= 0.80:
 
-            elif r2 > 0.6:
+                quality = "strong"
 
-                quality = (
-                    "moderate"
-                )
+            elif r2 >= 0.60:
+
+                quality = "moderate"
 
             else:
 
-                quality = (
-                    "weak"
-                )
+                quality = "weak"
 
             insights.append({
 
@@ -94,11 +88,129 @@ class InsightAgent:
 
             })
 
+            insights.append({
+
+                "type":
+                "error",
+
+                "message":
+                f"Average prediction error is {result['mae']:,.0f}"
+
+            })
+
+            insights.append({
+
+                "type":
+                "risk",
+
+                "message":
+                f"Worst prediction error observed was {result['max_error']:,.0f}"
+
+            })
+
+        # ==========================
+        # Classification Insights
+        # ==========================
+
+        elif "accuracy" in result:
+
+            accuracy = result["accuracy"]
+
+            insights.append({
+
+                "type":
+                "model_quality",
+
+                "message":
+                f"Classification accuracy is {accuracy:.1%}"
+
+            })
+
+            if "f1" in result:
+
+                insights.append({
+
+                    "type":
+                    "f1",
+
+                    "message":
+                    f"F1 Score is {result['f1']:.3f}"
+
+                })
+
+        # ==========================
+        # Explainability Insights
+        # ==========================
+
+        positive = explainability_report.get(
+
+            "most_positive_factors",
+
+            []
+
+        )
+
+        negative = explainability_report.get(
+
+            "most_negative_factors",
+
+            []
+
+        )
+
+        if positive:
+
+            insights.append({
+
+                "type":
+                "positive_factors",
+
+                "message":
+                f"Top positive contributors: {', '.join(positive[:3])}"
+
+            })
+
+        if negative:
+
+            insights.append({
+
+                "type":
+                "negative_factors",
+
+                "message":
+                f"Top negative contributors: {', '.join(negative[:3])}"
+
+            })
+
+        # ==========================
+        # Dataset Insights
+        # ==========================
+
+        X_train = training_results[
+            "X_train"
+        ]
+
+        if X_train.isnull().sum().sum() > 0:
+
+            insights.append({
+
+                "type":
+                "dataset",
+
+                "message":
+                "Dataset still contains missing values."
+
+            })
+
+        # ==========================
+        # Final Output
+        # ==========================
+
         return {
 
             "top_drivers":
             list(
-                impacts.keys()
+                importance.keys()
             )[:5],
 
             "insights":
