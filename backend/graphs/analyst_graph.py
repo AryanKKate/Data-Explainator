@@ -315,29 +315,18 @@ def recommendation_node(state):
             target=
             state["target_column"],
 
-            insights=
-            state["insights"],
-
-            semantic_schema=
-            state["semantic_schema"],
-
             training_results=
             state["training_results"],
-
-            query=
-            state["user_query"],
 
             explainability_report=
             state["explainability_report"],
 
-            validation_report=
-            state["validation_report"],
-
             business_intelligence=
             state["business_intelligence"],
 
-            visualizations=
-            state["visualizations"]
+            query=
+            state["user_query"]
+
 
         )
 

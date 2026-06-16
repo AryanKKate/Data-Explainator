@@ -7,46 +7,79 @@ class ExplainabilityAgent:
     @staticmethod
     def generate(training_results):
 
-        best_model = training_results[
-            "best_model"
-        ]
+        best_model = training_results["best_model"]
 
-        model = training_results[
-            "trained_models"
-        ][best_model]
+        model = (
+            training_results["trained_models"]
+            [best_model]
+        )
 
-        X_test = training_results[
-            "X_test"
-        ]
+        X_test = (
+            training_results["X_test"]
+        )
 
-        feature_names = training_results[
-            "feature_names"
-        ]
+        feature_names = (
+            training_results["feature_names"]
+        )
 
         try:
 
+            sample_size = min(
+                1000,
+                len(X_test)
+            )
+
+            X_sample = (
+                X_test.iloc[:sample_size]
+            )
+
             explainer = shap.Explainer(
                 model,
-                X_test
+                X_sample
             )
 
-            shap_values = explainer(
-                X_test
+            shap_result = explainer(
+                X_sample,
+                check_additivity=False
             )
 
-            values = shap_values.values
+            values = shap_result.values
 
-            # Handle multiclass outputs
-            if len(values.shape) == 3:
+            # =========================
+            # REGRESSION
+            # (n_samples,n_features)
+            # =========================
 
-                values = np.mean(
+            if len(values.shape) == 2:
+
+                shap_matrix = values
+
+            # =========================
+            # CLASSIFICATION
+            # (n_samples,n_features,n_classes)
+            # =========================
+
+            elif len(values.shape) == 3:
+
+                shap_matrix = np.mean(
                     np.abs(values),
                     axis=2
                 )
 
-            importance = np.abs(
-                values
-            ).mean(axis=0)
+            else:
+
+                raise ValueError(
+                    f"Unsupported SHAP shape: {values.shape}"
+                )
+
+            # =========================
+            # GLOBAL IMPORTANCE
+            # =========================
+
+            importance = np.mean(
+                np.abs(shap_matrix),
+                axis=0
+            )
 
             feature_impact = dict(
 
@@ -61,23 +94,12 @@ class ExplainabilityAgent:
 
                     reverse=True
 
-                )
-
-            )
-
-            feature_impact = dict(
-
-                list(
-                    feature_impact.items()
                 )[:10]
 
             )
 
-
             total_importance = sum(
-
                 feature_impact.values()
-
             )
 
             if total_importance > 0:
@@ -87,14 +109,15 @@ class ExplainabilityAgent:
                     feature:
 
                     round(
-                        score /
+                        float(score)
+                        /
                         total_importance
                         * 100,
                         2
                     )
 
-                    for feature, score in
-                    feature_impact.items()
+                    for feature, score
+                    in feature_impact.items()
 
                 }
 
@@ -102,13 +125,9 @@ class ExplainabilityAgent:
 
                 global_importance_percentages = {}
 
-
             top_drivers = list(
-
                 feature_impact.keys()
-
             )[:5]
-
 
             driver_insights = [
 
@@ -118,19 +137,21 @@ class ExplainabilityAgent:
 
             ]
 
+            # =========================
+            # LOCAL EXPLANATION
+            # =========================
 
             sample_idx = 0
+
+            local_values = (
+                shap_matrix[sample_idx]
+            )
 
             contributions = dict(
 
                 zip(
-
                     feature_names,
-
-                    values[
-                        sample_idx
-                    ]
-
+                    local_values
                 )
 
             )
@@ -139,23 +160,35 @@ class ExplainabilityAgent:
 
                 contributions.items(),
 
-                key=lambda x: abs(x[1]),
+                key=lambda x:
+                abs(x[1]),
 
                 reverse=True
 
             )[:5]
 
+            # =========================
+            # POSITIVE / NEGATIVE
+            # =========================
+
+            if len(values.shape) == 3:
+
+                local_raw = np.mean(
+                    values[sample_idx],
+                    axis=1
+                )
+
+            else:
+
+                local_raw = (
+                    values[sample_idx]
+                )
 
             raw_sample = dict(
 
                 zip(
-
                     feature_names,
-
-                    shap_values.values[
-                        sample_idx
-                    ]
-
+                    local_raw
                 )
 
             )
@@ -178,28 +211,17 @@ class ExplainabilityAgent:
 
             )[:5]
 
-            most_positive_factors = [
-
-                feature
-
-                for feature, _
-                in positive_factors
-
-            ]
-
-            most_negative_factors = [
-
-                feature
-
-                for feature, _
-                in negative_factors
-
-            ]
-
             return {
 
                 "feature_impact":
-                feature_impact,
+                {
+                    k: round(
+                        float(v),
+                        4
+                    )
+                    for k, v in
+                    feature_impact.items()
+                },
 
                 "top_drivers":
                 top_drivers,
@@ -214,10 +236,18 @@ class ExplainabilityAgent:
                 global_importance_percentages,
 
                 "most_positive_factors":
-                most_positive_factors,
+                [
+                    f
+                    for f, _
+                    in positive_factors
+                ],
 
                 "most_negative_factors":
-                most_negative_factors
+                [
+                    f
+                    for f, _
+                    in negative_factors
+                ]
 
             }
 

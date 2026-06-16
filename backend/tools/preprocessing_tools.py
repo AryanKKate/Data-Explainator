@@ -168,25 +168,98 @@ class FeatureTools:
     @staticmethod
     def encode(df, target):
 
-        categorical = df.select_dtypes(
-            include=['object']
-        ).columns.tolist()
+        categorical_cols = []
 
-        # Remove target if present
-        if target in categorical:
-            categorical.remove(
-                target
+        print("\nCategorical Analysis")
+
+        for col in df.columns:
+
+            if col == target:
+                continue
+
+            if not (
+                pd.api.types.is_object_dtype(df[col])
+                or
+                pd.api.types.is_string_dtype(df[col])
+                or
+                pd.api.types.is_categorical_dtype(df[col])
+            ):
+                continue
+
+            unique_count = df[col].nunique()
+
+            print(
+                f"{col}: {unique_count}"
             )
 
+            if unique_count > 50:
+
+                print(
+                    f"Skipping high-cardinality column: {col}"
+                )
+
+                continue
+
+            categorical_cols.append(col)
+
+        print(
+            "\nEncoding columns:",
+            categorical_cols
+        )
+
         df = pd.get_dummies(
+
             df,
-            columns=categorical,
+
+            columns=categorical_cols,
+
             drop_first=True,
-            dtype=int
+
+            dtype=np.uint8
+
         )
 
         return df
 
+    @staticmethod
+    def auto_convert_numeric(df):
+
+        for col in df.columns:
+
+            if not (
+                pd.api.types.is_object_dtype(df[col]) or
+                pd.api.types.is_string_dtype(df[col])
+            ):
+                continue
+
+            cleaned = (
+
+                df[col]
+                .astype(str)
+                .str.strip()
+                .replace("", np.nan)
+
+            )
+
+            converted = pd.to_numeric(
+                cleaned,
+                errors="coerce"
+            )
+
+            conversion_rate = (
+                converted.notna().mean()
+            )
+
+            if conversion_rate > 0.90:
+
+                df[col] = converted
+
+                print(
+                    f"{col} converted to numeric "
+                    f"({round(conversion_rate*100,2)}%)"
+                )
+
+        return df
 
     @staticmethod
     def scale(df, target, schema=None):

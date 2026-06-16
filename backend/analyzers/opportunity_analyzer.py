@@ -1,5 +1,6 @@
 class OpportunityAnalyzer:
 
+
     @staticmethod
     def analyze(
 
@@ -8,17 +9,17 @@ class OpportunityAnalyzer:
         trust
 
     ):
-        trust_score = trust['trust_score']
+
+        trust_score = trust["trust_score"]
+
         opportunities = []
 
         shap_scores = (
-
             explainability_report
             .get(
                 "global_importance_percentages",
                 {}
             )
-
         )
 
         drivers = statistical_findings[
@@ -29,45 +30,58 @@ class OpportunityAnalyzer:
 
             feature = item["feature"]
 
-            uplift = abs(
-                item["uplift_pct"]
-            )
+            uplift = item[
+                "uplift_pct"
+            ]
 
-            p_value = item["p_value"]
+            p_value = item[
+                "p_value"
+            ]
 
-            importance = shap_scores.get(
-                feature,
-                0
+            importance = (
+                shap_scores.get(
+                    feature,
+                    0
+                )
             )
 
             significance = max(
-
                 0,
-
                 1 - p_value
+            )
+
+            # keep direction
+
+            direction = (
+                "positive"
+                if uplift > 0
+                else "negative"
+            )
+
+            # weighted score
+
+            score = (
+
+                abs(uplift) * 0.6
+
+                +
+
+                importance * 0.3
+
+                +
+
+                significance * 100 * 0.1
 
             )
 
             score = (
-
-                uplift
-
+                score
                 *
-
-                importance
-
-                *
-
-                significance
-
-                *
-
                 (
                     trust_score
                     /
                     100
                 )
-
             )
 
             opportunities.append({
@@ -76,10 +90,19 @@ class OpportunityAnalyzer:
                 feature,
 
                 "uplift_pct":
-                uplift,
+                round(
+                    uplift,
+                    2
+                ),
+
+                "direction":
+                direction,
 
                 "importance":
-                importance,
+                round(
+                    importance,
+                    2
+                ),
 
                 "p_value":
                 p_value,

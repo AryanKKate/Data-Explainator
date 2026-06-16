@@ -25,9 +25,37 @@ class InsightAgent:
 
         )
 
+        positive_factors = explainability_report.get(
+            "most_positive_factors",
+            []
+        )
+
+        negative_factors = explainability_report.get(
+            "most_negative_factors",
+            []
+        )
+
         for feature, pct in list(
             importance.items()
         )[:5]:
+
+            if feature in positive_factors:
+
+                direction = (
+                    f"Increases {target}"
+                )
+
+            elif feature in negative_factors:
+
+                direction = (
+                    f"Reduces {target}"
+                )
+
+            else:
+
+                direction = (
+                    "Strong predictor"
+                )
 
             insights.append({
 
@@ -35,10 +63,10 @@ class InsightAgent:
                 "driver",
 
                 "headline":
-                f"{feature} is a key driver",
+                feature,
 
                 "evidence":
-                f"Explains {pct}% of model behavior",
+                f"{direction} • {pct}% importance",
 
                 "confidence":
                 round(
@@ -68,16 +96,44 @@ class InsightAgent:
 
         for item in statistical_findings[:5]:
 
+            uplift = item["uplift_pct"]
+
+            feature = item["feature"]
+
+            if uplift > 0:
+
+                headline = (
+                    f"{feature} associated with higher {target}"
+                )
+
+                evidence = (
+                    f"{abs(round(uplift,2))}% increase"
+                )
+
+                insight_type = "risk"
+
+            else:
+
+                headline = (
+                    f"{feature} associated with lower {target}"
+                )
+
+                evidence = (
+                    f"{abs(round(uplift,2))}% reduction"
+                )
+
+                insight_type = "opportunity"
+
             insights.append({
 
                 "type":
-                "opportunity",
+                insight_type,
 
                 "headline":
-                f"{item['feature']} creates value",
+                headline,
 
                 "evidence":
-                f"{item['uplift_pct']}% uplift",
+                evidence,
 
                 "confidence":
                 round(

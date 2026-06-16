@@ -1,7 +1,7 @@
-from utils.llm import llm
-
 from pydantic import BaseModel
 from typing import List
+
+from utils.llm import llm
 
 
 class RecommendationOutput(BaseModel):
@@ -19,129 +19,225 @@ class RecommendationAgent:
 
     @staticmethod
     def generate(
+
         task,
         target,
-        insights,
-        semantic_schema,
         training_results,
-        query,
         explainability_report,
-        validation_report,
         business_intelligence,
-        visualizations
+        query
+
     ):
 
-        best_model = training_results.get(
-            "best_model",
-            ""
+        # =====================================
+        # Model Metrics
+        # =====================================
+
+        best_model = training_results[
+            "best_model"
+        ]
+
+        metrics = training_results[
+            "results"
+        ][best_model]
+
+        # =====================================
+        # SHAP Drivers
+        # =====================================
+
+        importance = (
+            explainability_report.get(
+                "global_importance_percentages",
+                {}
+            )
         )
 
-        metrics = (
+        # =====================================
+        # Opportunities
+        # =====================================
 
-            training_results
-            .get("results", {})
-            .get(best_model, {})
+        opportunity_ranking = (
+
+            business_intelligence.get(
+                "opportunity_ranking",
+                []
+            )
 
         )
+
+        evidence = []
+
+        for item in opportunity_ranking[:10]:
+
+            feature = item.get(
+                "feature"
+            )
+
+            evidence.append({
+
+                "feature":
+                feature,
+
+                "importance":
+                round(
+                    importance.get(
+                        feature,
+                        0
+                    ),
+                    2
+                ),
+
+                "opportunity_score":
+                round(
+                    item.get(
+                        "opportunity_score",
+                        0
+                    ),
+                    2
+                )
+
+            })
+
+        # =====================================
+        # Segments
+        # =====================================
+
+        segment_data = (
+
+            business_intelligence
+            .get(
+                "segments",
+                {}
+            )
+            .get(
+                "segments",
+                []
+            )
+
+        )
+
+        # =====================================
+        # Trust
+        # =====================================
+
+        trust_score = (
+
+            business_intelligence
+            .get(
+                "trust_score",
+                {}
+            )
+            .get(
+                "trust_score",
+                0
+            )
+
+        )
+
+        # =====================================
+        # Data Quality
+        # =====================================
+
+        data_quality = (
+
+            business_intelligence
+            .get(
+                "data_quality",
+                {}
+            )
+            .get(
+                "overall_score",
+                0
+            )
+
+        )
+
+        # =====================================
+        # Prompt
+        # =====================================
 
         prompt = f"""
 
-You are a Principal Data Scientist and Strategy Consultant.
+You are a Senior Analytics Consultant.
 
-Your job is NOT to explain the model.
+Your job is to generate executive business recommendations based on user query{query} and the results of a comprehensive data analysis
 
-Your job is to identify:
+IMPORTANT RULES:
 
-1. Business Opportunities
-2. Operational Risks
-3. Strategic Recommendations
-4. Quick Wins
+- Use ONLY evidence provided.
+- Never invent domain facts.
+- Never assume industry context.
+- Never mention houses, customers, products,
+  patients, employees, etc unless present in evidence.
+- Recommendations must be data-driven.
+- Recommendations must be supported by metrics.
 
-using the analytical evidence provided.
+----------------------------------------
 
-------------------------------------------------
-USER QUESTION
-------------------------------------------------
-
-{query}
-
-------------------------------------------------
 TASK
-------------------------------------------------
 
 {task}
 
-------------------------------------------------
 TARGET
-------------------------------------------------
 
 {target}
 
-------------------------------------------------
-MODEL
-------------------------------------------------
+----------------------------------------
 
+MODEL
+
+Best Model:
 {best_model}
 
-------------------------------------------------
-MODEL PERFORMANCE
-------------------------------------------------
-
+Metrics:
 {metrics}
 
-------------------------------------------------
-INSIGHTS
-------------------------------------------------
+Trust Score:
+{trust_score}
 
-{insights}
+Data Quality Score:
+{data_quality}
 
-------------------------------------------------
-EXPLAINABILITY
-------------------------------------------------
+----------------------------------------
 
-{explainability_report}
+TOP OPPORTUNITIES
 
-------------------------------------------------
-DATA QUALITY
-------------------------------------------------
+{evidence}
 
-{validation_report}
+----------------------------------------
 
-------------------------------------------------
-SEMANTIC SCHEMA
-------------------------------------------------
+SEGMENTS
 
-{semantic_schema}
+{segment_data}
 
-------------------------------------------------
-INSTRUCTIONS
-------------------------------------------------
+----------------------------------------
 
 Generate:
 
-recommendations:
-- 5 strategic recommendations
+1. 5 Recommendations
+2. 3 Opportunities
+3. 3 Risks
+4. 3 Quick Wins
 
-opportunities:
-- 3 business opportunities
+Rules:
 
-risks:
-- 3 important risks
+Recommendations:
+- Actionable
+- Executive level
+- Under 25 words
 
-quick_wins:
-- 3 high-impact actions
+Opportunities:
+- Based only on highest opportunity scores
 
-Requirements:
+Risks:
+- Based on model reliability
+- Based on data quality
+- Based on concentration of drivers
 
-- Must be evidence driven.
-- Use SHAP drivers.
-- Use model quality.
-- Use dataset characteristics.
-- Use business context.
-- Never invent numbers.
-- Never mention machine learning jargon.
-- Speak like a McKinsey/Bain consultant.
-- Focus on business value.
+Quick Wins:
+- Easy actions based on top opportunities
+
+Return concise bullet style output.
 
 """
 

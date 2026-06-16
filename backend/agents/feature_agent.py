@@ -53,6 +53,14 @@ class FeatureAgent:
             semantic_schema
         )
 
+        # =====================================
+        # Auto detect numeric columns
+        # =====================================
+
+        df = FeatureTools.auto_convert_numeric(
+            df
+        )
+
         print(
             "After semantic numeric conversion:",
             df.shape
