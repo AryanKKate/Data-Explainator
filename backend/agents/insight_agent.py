@@ -96,44 +96,23 @@ class InsightAgent:
 
         for item in statistical_findings[:5]:
 
-            uplift = item["uplift_pct"]
-
-            feature = item["feature"]
-
-            if uplift > 0:
-
-                headline = (
-                    f"{feature} associated with higher {target}"
-                )
-
-                evidence = (
-                    f"{abs(round(uplift,2))}% increase"
-                )
-
-                insight_type = "risk"
-
-            else:
-
-                headline = (
-                    f"{feature} associated with lower {target}"
-                )
-
-                evidence = (
-                    f"{abs(round(uplift,2))}% reduction"
-                )
-
-                insight_type = "opportunity"
+            relationship = item[
+                "relationship"
+            ]
 
             insights.append({
 
                 "type":
-                insight_type,
+                "relationship",
 
                 "headline":
-                headline,
+                item["feature"],
 
                 "evidence":
-                evidence,
+                (
+                    f"{relationship} relationship "
+                    f"(corr={item['correlation']})"
+                ),
 
                 "confidence":
                 round(

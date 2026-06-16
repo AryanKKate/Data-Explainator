@@ -30,8 +30,8 @@ class OpportunityAnalyzer:
 
             feature = item["feature"]
 
-            uplift = item[
-                "uplift_pct"
+            correlation = item[
+                "correlation"
             ]
 
             p_value = item[
@@ -52,17 +52,15 @@ class OpportunityAnalyzer:
 
             # keep direction
 
-            direction = (
-                "positive"
-                if uplift > 0
-                else "negative"
-            )
+            direction = item[
+                "relationship"
+            ]
 
             # weighted score
 
             score = (
 
-                abs(uplift) * 0.6
+                abs(correlation) * 100 * 0.6
 
                 +
 
@@ -89,10 +87,10 @@ class OpportunityAnalyzer:
                 "feature":
                 feature,
 
-                "uplift_pct":
+                "correlation":
                 round(
-                    uplift,
-                    2
+                    correlation,
+                    3
                 ),
 
                 "direction":

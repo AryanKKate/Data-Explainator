@@ -63,9 +63,18 @@ class StatisticalAnalyzer:
 
         )
 
+        driver_analysis = []
+
         for col in numeric_cols:
 
             try:
+
+                corr = df[
+                    [col, target]
+                ].corr().iloc[0, 1]
+
+                if pd.isna(corr):
+                    continue
 
                 median = df[col].median()
 
@@ -83,41 +92,36 @@ class StatisticalAnalyzer:
                 if len(low) < 10:
                     continue
 
-                uplift = (
-
-                    (
-                        high.mean()
-                        -
-                        low.mean()
-                    )
-
-                    /
-
-                    max(
-                        abs(low.mean()),
-                        1
-                    )
-
-                ) * 100
-
                 _, p_value = ttest_ind(
-
                     high,
                     low,
-
                     equal_var=False
-
                 )
 
-                findings.append({
+                driver_analysis.append({
 
                     "feature":
                     col,
 
-                    "uplift_pct":
+                    "correlation":
                     round(
-                        uplift,
-                        2
+                        float(corr),
+                        3
+                    ),
+
+                    "relationship":
+                    (
+                        "positive"
+                        if corr > 0
+                        else "negative"
+                    ),
+
+                    "strength":
+                    round(
+                        abs(
+                            float(corr)
+                        ),
+                        3
                     ),
 
                     "p_value":
@@ -133,13 +137,18 @@ class StatisticalAnalyzer:
             except:
                 pass
 
-        findings = sorted(
+        driver_analysis = sorted(
 
-            findings,
+            driver_analysis,
 
-            key=lambda x:
-            abs(
-                x["uplift_pct"]
+            key=lambda x: (
+
+                abs(
+                    x["correlation"]
+                ),
+
+                1 - x["p_value"]
+
             ),
 
             reverse=True
@@ -149,7 +158,7 @@ class StatisticalAnalyzer:
         return {
 
             "driver_analysis":
-            findings,
+            driver_analysis[:20],
 
             "correlations":
             correlations[:20],
