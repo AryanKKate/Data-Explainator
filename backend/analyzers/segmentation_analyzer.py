@@ -207,6 +207,30 @@ class SegmentationAnalyzer:
 
             ]
 
+            segment_name = (
+                " / ".join(
+                    top_characteristics[:3]
+                )
+            )
+
+            segment_score = (
+
+                abs(uplift) * 0.5
+
+                +
+
+                (
+                    len(group)
+                    /
+                    len(temp)
+                ) * 100 * 0.3
+
+                +
+
+                len(top_characteristics) * 0.2
+
+            )
+
             segments.append({
 
                 "segment":
@@ -234,11 +258,17 @@ class SegmentationAnalyzer:
                 "uplift_pct":
                 uplift,
 
-                "top_characteristics":
-                top_characteristics,
+                "segment_summary": {
+                feature:
+                round(group[feature].mean(),2)
+                for feature in top_characteristics
+            },
+                "segment_score":
+                round(segment_score,2),
 
-                "feature_profile":
-                characteristics
+                "segment_name":
+                segment_name,
+
 
             })
 
@@ -251,19 +281,20 @@ class SegmentationAnalyzer:
             segments,
 
             key=lambda x:
-            x["avg_target"],
+            x["segment_score"],
 
             reverse=True
 
         )
 
         best_segment = (
+            max(
+            segments,
+            key=lambda x: x["segment_score"]
+        )
 
-            segments[0]
-
-            if segments
-
-            else None
+        if segments
+        else None
 
         )
 

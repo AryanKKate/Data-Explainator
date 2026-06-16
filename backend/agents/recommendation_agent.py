@@ -52,48 +52,63 @@ class RecommendationAgent:
             )
         )
 
-        # =====================================
-        # Opportunities
-        # =====================================
+        statistical_findings = (
 
-        opportunity_ranking = (
-
-            business_intelligence.get(
-                "opportunity_ranking",
+            business_intelligence
+            .get(
+                "statistical_findings",
+                {}
+            )
+            .get(
+                "driver_analysis",
                 []
             )
 
         )
 
+        # =====================================
+        # Opportunities
+        # =====================================
+
+        translated_insights = (
+
+            business_intelligence.get(
+                "translated_insights",
+                []
+            )
+
+        )
+
+
         evidence = []
 
-        for item in opportunity_ranking[:10]:
-
-            feature = item.get(
-                "feature"
-            )
+        for item in translated_insights[:10]:
 
             evidence.append({
 
                 "feature":
-                feature,
-
-                "importance":
-                round(
-                    importance.get(
-                        feature,
-                        0
-                    ),
-                    2
+                item.get(
+                    "feature"
                 ),
 
-                "opportunity_score":
-                round(
-                    item.get(
-                        "opportunity_score",
-                        0
-                    ),
-                    2
+                "finding":
+                item.get(
+                    "finding"
+                ),
+
+                "importance":
+                item.get(
+                    "importance"
+                ),
+
+                "priority_score":
+                item.get(
+                    "priority_score"
+                ),
+
+                "actionable":
+                item.get(
+                    "actionable"
                 )
 
             })
@@ -155,7 +170,10 @@ class RecommendationAgent:
         # =====================================
         # Prompt
         # =====================================
-
+        top_drivers = explainability_report.get(
+            "top_drivers",
+            []
+        )
         prompt = f"""
 
 You are a Senior Analytics Consultant.
@@ -200,15 +218,28 @@ Data Quality Score:
 
 ----------------------------------------
 
-TOP OPPORTUNITIES
+TRANSLATED BUSINESS INSIGHTS
 
 {evidence}
+
+IMPORTANT:
+
+- Never recommend increasing feature importance.
+- Never recommend modifying model features.
+- Never recommend improving a variable unless it is marked actionable=True.
+- Use actionable=False items only as supporting evidence.
+- Recommendations must focus on business decisions, not machine learning features.
+- If no actionable opportunities exist, provide strategic monitoring recommendations instead.
 
 ----------------------------------------
 
 SEGMENTS
 
 {segment_data}
+
+TOP MODEL DRIVERS
+
+{top_drivers}
 
 ----------------------------------------
 
@@ -230,12 +261,33 @@ Opportunities:
 - Based only on highest opportunity scores
 
 Risks:
-- Based on model reliability
-- Based on data quality
-- Based on concentration of drivers
+
+- Mention a risk ONLY if evidence supports it.
+- Do not assume overfitting.
+- Do not invent data quality problems.
+- Do not invent reliability problems.
+
+Examples:
+
+Trust Score < 50
+→ reliability risk
+
+Data Quality < 70
+→ data quality risk
+
+Top driver concentration > 60%
+→ dependency risk
+
+Otherwise return:
+"No major analytical risks identified"
 
 Quick Wins:
-- Easy actions based on top opportunities
+
+- Must reference specific features.
+- Must be supported by evidence.
+- Must never mention model engineering.
+- Must never suggest collecting more data.
+- Must never suggest feature engineering.
 
 Return concise bullet style output.
 

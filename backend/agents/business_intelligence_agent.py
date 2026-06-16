@@ -3,6 +3,7 @@ from analyzers.segmentation_analyzer import SegmentationAnalyzer
 from analyzers.opportunity_analyzer import OpportunityAnalyzer
 from analyzers.trust_score_analyzer import TrustScoreAnalyzer
 from analyzers.data_quality_analyzer import DataQualityAnalyzer
+from analyzers.insight_translator import InsightTranslator
 
 
 class BusinessIntelligenceAgent:
@@ -55,6 +56,20 @@ class BusinessIntelligenceAgent:
 
         )
 
+        translated_insights = (
+
+            InsightTranslator.analyze(
+
+                opportunities,
+
+                explainability_report,
+
+                stats
+
+            )
+
+        )
+
         
 
         quality = (
@@ -67,6 +82,33 @@ class BusinessIntelligenceAgent:
 
         )
 
+        summary = {
+
+            "top_driver":
+
+            explainability_report
+            .get(
+                "top_drivers",
+                [None]
+            )[0],
+
+            "top_opportunity":
+
+            opportunities[0]["feature"]
+
+            if opportunities
+
+            else None,
+
+            "best_segment":
+
+            segments.get(
+                "best_segment",
+                None
+            )
+
+        }
+
         return {
 
             "statistical_findings":
@@ -78,10 +120,16 @@ class BusinessIntelligenceAgent:
             "opportunity_ranking":
             opportunities,
 
+            "translated_insights":
+            translated_insights,
+
             "trust_score":
             trust,
 
             "data_quality":
-            quality
+            quality,
+
+            "summary":
+            summary
 
         }
