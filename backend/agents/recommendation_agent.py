@@ -70,48 +70,17 @@ class RecommendationAgent:
         # Opportunities
         # =====================================
 
-        translated_insights = (
-
+        business_observations = (
             business_intelligence.get(
-                "translated_insights",
+                "business_observations",
                 []
             )
-
         )
 
 
         evidence = []
 
-        for item in translated_insights[:10]:
 
-            evidence.append({
-
-                "feature":
-                item.get(
-                    "feature"
-                ),
-
-                "finding":
-                item.get(
-                    "finding"
-                ),
-
-                "importance":
-                item.get(
-                    "importance"
-                ),
-
-                "priority_score":
-                item.get(
-                    "priority_score"
-                ),
-
-                "actionable":
-                item.get(
-                    "actionable"
-                )
-
-            })
 
         # =====================================
         # Segments
@@ -167,13 +136,23 @@ class RecommendationAgent:
 
         )
 
+        ranked_insights = (
+            business_intelligence.get(
+                "ranked_insights",
+                []
+            )
+        )
+        opportunities = (
+        business_intelligence.get(
+            "opportunities",
+            []
+        )
+    )
+
         # =====================================
         # Prompt
         # =====================================
-        top_drivers = explainability_report.get(
-            "top_drivers",
-            []
-        )
+
         prompt = f"""
 
 You are a Senior Analytics Consultant.
@@ -237,9 +216,13 @@ SEGMENTS
 
 {segment_data}
 
-TOP MODEL DRIVERS
+TOP RANKED INSIGHTS
 
-{top_drivers}
+{ranked_insights[:10]}
+
+RANKED OPPORTUNITIES
+
+{opportunities}
 
 ----------------------------------------
 
@@ -264,10 +247,14 @@ that such an action is possible.
 
 Generate:
 
-1. 5 Recommendations
-2. 3 Opportunities
-3. 3 Risks
-4. 3 Quick Wins
+1. Recommendations
+2. Risks
+3. Quick Wins
+
+Do NOT generate new opportunities.
+
+Opportunities have already been identified by the analytical pipeline.
+Only summarize the highest-ranked opportunities provided.
 
 Rules:
 
@@ -275,9 +262,24 @@ Recommendations:
 - Actionable
 - Executive level
 - Under 25 words
+Recommendations must originate from:
 
+- business observations
+- ranked opportunities
+- segment findings
+
+Do not generate recommendations directly from feature names.
 Opportunities:
 - Based only on highest opportunity scores
+
+Otherwise return:
+
+["No major analytical risks identified"]
+
+IMPORTANT:
+recommendations, opportunities, risks, and quick_wins
+must ALWAYS be arrays of strings.
+Never return a single string.
 
 Risks:
 
@@ -297,8 +299,7 @@ Data Quality < 70
 Top driver concentration > 60%
 → dependency risk
 
-Otherwise return:
-"No major analytical risks identified"
+
 
 Quick Wins:
 

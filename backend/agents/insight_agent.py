@@ -1,4 +1,51 @@
 class InsightAgent:
+
+    @staticmethod
+    def build_business_observations(
+        ranked_insights,
+        business_intelligence
+    ):
+
+        observations = []
+
+        for insight in ranked_insights[:10]:
+
+            if insight["type"] == "relationship":
+
+                feature = insight["headline"]
+
+                direction = (
+                    "higher"
+                    if "positive" in insight["evidence"]
+                    else "lower"
+                )
+
+                observations.append(
+
+                    f"{feature} is associated with "
+                    f"{direction} {business_intelligence['target']}."
+
+                )
+
+            elif insight["type"] == "driver":
+
+                observations.append(
+
+                    f"{insight['headline']} is one of the "
+                    f"strongest drivers of model predictions."
+
+                )
+
+            elif insight["type"] == "segment":
+
+                observations.append(
+
+                    f"{insight['headline']} "
+                    f"shows {insight['evidence']}."
+
+                )
+
+        return observations
     @staticmethod
     def narrate(insights):
 
@@ -467,16 +514,7 @@ class InsightAgent:
 
             })
 
-        insights = sorted(
 
-            insights,
-
-            key=lambda x:
-            x["score"],
-
-            reverse=True
-
-        )
 
         for rank, item in enumerate(
             insights,
@@ -493,15 +531,21 @@ class InsightAgent:
             ranked
         )
 
+        observations = (
+            InsightAgent.build_business_observations(
+                ranked,
+                business_intelligence
+            )
+        )
+
         return {
 
-            "top_insights":
-            ranked[:10],
+            "top_insights": ranked[:10],
 
-            "narratives":
-            narratives,
+            "narratives": narratives,
 
-            "insights":
-            ranked
+            "business_observations": observations,
+
+            "insights": ranked
 
         }

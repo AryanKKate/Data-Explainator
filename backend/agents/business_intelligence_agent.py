@@ -132,6 +132,9 @@ class BusinessIntelligenceAgent:
             quality,
 
             "summary":
-            summary
+            summary,
+
+            "target":
+            target,
 
         }
