@@ -1,4 +1,144 @@
 class InsightAgent:
+    @staticmethod
+    def narrate(insights):
+
+        narratives = []
+
+        for item in insights[:5]:
+
+            if item["type"] == "relationship":
+
+                narratives.append(
+
+                    f"{item['headline']} shows "
+                    f"{item['evidence']}."
+
+                )
+
+            elif item["type"] == "driver":
+
+                narratives.append(
+
+                    f"{item['headline']} is one "
+                    f"of the strongest model drivers."
+
+                )
+
+            elif item["type"] == "segment":
+
+                narratives.append(
+
+                    f"{item['headline']} "
+                    f"with {item['evidence']}."
+
+                )
+
+            elif item["type"] == "model":
+
+                narratives.append(
+
+                    f"The model achieved "
+                    f"{item['evidence']}."
+
+                )
+
+            elif item["type"] == "quality":
+
+                narratives.append(
+
+                    f"Data quality remains high "
+                    f"at {item['evidence']}."
+
+                )
+
+            elif item["type"] == "trust":
+
+                narratives.append(
+
+                    f"Prediction trust score is "
+                    f"{item['evidence']}."
+
+                )
+
+        return narratives
+
+    @staticmethod
+    def rank_insights(insights):
+
+        for insight in insights:
+
+            score = 0
+
+            if insight["type"] == "relationship":
+
+                score = (
+                    insight["confidence"] * 100
+                )
+
+            elif insight["type"] == "segment":
+
+                uplift = float(
+                    insight["evidence"]
+                    .split("%")[0]
+                )
+
+                score = abs(uplift)
+
+            elif insight["type"] == "driver":
+
+                try:
+
+                    score = float(
+                        insight["evidence"]
+                        .split("Explains ")[1]
+                        .split("%")[0]
+                    )
+
+                except:
+                    score = 0
+
+            elif insight["type"] == "model":
+
+                score = (
+                    insight["confidence"] * 40
+                )
+
+            elif insight["type"] == "quality":
+
+                score = (
+                    insight["confidence"] * 20
+                )
+
+            elif insight["type"] == "trust":
+
+                score = (
+                    insight["confidence"] * 20
+                )
+
+            insight["score"] = round(
+                score,
+                2
+            )
+
+        insights = sorted(
+
+            insights,
+
+            key=lambda x:
+            x["score"],
+
+            reverse=True
+
+        )
+
+        for rank, item in enumerate(
+            insights,
+            start=1
+        ):
+
+            item["rank"] = rank
+
+        return insights
 
     @staticmethod
     def generate(
@@ -57,7 +197,10 @@ class InsightAgent:
                 round(
                     pct / 100,
                     2
-                )
+                ),
+
+                "score":
+                float(pct)
 
             })
 
@@ -85,6 +228,10 @@ class InsightAgent:
                 "relationship"
             ]
 
+            corr_strength = abs(
+                item["correlation"]
+            )
+
             insights.append({
 
                 "type":
@@ -93,20 +240,22 @@ class InsightAgent:
                 "headline":
                 item["feature"],
 
-                "evidence" : (
-
+                "evidence":
+                (
                     f"{relationship} association "
-
                     f"(correlation = "
-
                     f"{item['correlation']})"
-
                 ),
 
-                "confidence" :round(
-                    abs(
-                        item["correlation"]
-                    ),
+                "confidence":
+                round(
+                    corr_strength,
+                    2
+                ),
+
+                "score":
+                round(
+                    corr_strength * 100,
                     2
                 )
 
@@ -146,19 +295,43 @@ class InsightAgent:
 
             if best_segment:
 
+                segment_score = (
+
+                    abs(
+                        best_segment["uplift_pct"]
+                    )
+
+                    +
+
+                    best_segment["percentage"] * 0.3
+
+                )
+
                 insights.append({
 
                     "type":
                     "segment",
 
                     "headline":
-                    f"{best_segment['segment']} is highest value",
+                    (
+                        f"High-value segment: "
+                        f"{best_segment['segment_name']}"
+                    ),
 
                     "evidence":
-                    f"{best_segment['uplift_pct']}% above average",
+                    (
+                        f"{best_segment['uplift_pct']}% "
+                        f"above average"
+                    ),
 
                     "confidence":
-                    0.9
+                    0.9,
+
+                    "score":
+                    round(
+                        segment_score,
+                        2
+                    )
 
                 })
 
@@ -193,6 +366,11 @@ class InsightAgent:
                 round(
                     quality_score / 100,
                     2
+                ),
+
+                "score":
+                float(
+                    quality_score
                 )
 
             })
@@ -239,6 +417,12 @@ class InsightAgent:
             round(
                 reliability,
                 2
+            ),
+
+            "score":
+            round(
+                reliability * 100,
+                2
             )
 
         })
@@ -254,6 +438,11 @@ class InsightAgent:
 
         if isinstance(trust, dict):
 
+            trust_score = trust.get(
+            "trust_score",
+            0
+        )
+
             insights.append({
 
                 "type":
@@ -263,22 +452,56 @@ class InsightAgent:
                 "Prediction Trust Score",
 
                 "evidence":
-                f"{trust.get('trust_score',0)}/100",
+                f"{trust_score}/100",
 
                 "confidence":
                 round(
-                    trust.get(
-                        "trust_score",
-                        0
-                    ) / 100,
+                    trust_score / 100,
                     2
+                ),
+
+                "score":
+                float(
+                    trust_score
                 )
 
             })
 
+        insights = sorted(
+
+            insights,
+
+            key=lambda x:
+            x["score"],
+
+            reverse=True
+
+        )
+
+        for rank, item in enumerate(
+            insights,
+            start=1
+        ):
+
+            item["rank"] = rank
+
+        ranked = InsightAgent.rank_insights(
+            insights
+        )
+
+        narratives = InsightAgent.narrate(
+            ranked
+        )
+
         return {
 
+            "top_insights":
+            ranked[:10],
+
+            "narratives":
+            narratives,
+
             "insights":
-            insights
+            ranked
 
         }

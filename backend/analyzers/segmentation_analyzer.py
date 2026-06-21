@@ -170,13 +170,15 @@ class SegmentationAnalyzer:
                     ].mean()
                 )
 
+                overall_std = temp[feature].std()
+
+                if overall_std == 0:
+                    continue
+
                 delta = abs(
-
-                    segment_mean
-                    -
+                    segment_mean -
                     overall_mean
-
-                )
+                ) / overall_std
 
                 feature_deltas.append(
 
@@ -213,22 +215,16 @@ class SegmentationAnalyzer:
                 )
             )
 
-            segment_score = (
+            segments = sorted(
+                segments,
+                key=lambda x: x["avg_target"],
+                reverse=True
+            )
 
-                abs(uplift) * 0.5
-
-                +
-
-                (
-                    len(group)
-                    /
-                    len(temp)
-                ) * 100 * 0.3
-
-                +
-
-                len(top_characteristics) * 0.2
-
+            best_segment = (
+                segments[0]
+                if segments
+                else None
             )
 
             segments.append({
@@ -263,40 +259,17 @@ class SegmentationAnalyzer:
                 round(group[feature].mean(),2)
                 for feature in top_characteristics
             },
-                "segment_score":
-                round(segment_score,2),
 
                 "segment_name":
                 segment_name,
+                "top_characteristics": 
+                top_characteristics
 
 
             })
 
-        # ====================================
-        # Sort Segments by Value
-        # ====================================
 
-        segments = sorted(
 
-            segments,
-
-            key=lambda x:
-            x["segment_score"],
-
-            reverse=True
-
-        )
-
-        best_segment = (
-            max(
-            segments,
-            key=lambda x: x["segment_score"]
-        )
-
-        if segments
-        else None
-
-        )
 
         return {
 

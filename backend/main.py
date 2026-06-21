@@ -4,7 +4,7 @@ from pprint import pprint
 
 
 df=DataLoader.load(
-"data/customer_churn.csv"
+"data/Housing.csv"
 )
 
 
@@ -15,7 +15,7 @@ result=app.invoke({
 "profile":{},
 
 "user_query":
-"Predict customer churn based on features"})
+"Predict house prices based on features"})
 # print(
 #     result[
 #         "semantic_schema"

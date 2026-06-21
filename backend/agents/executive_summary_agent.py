@@ -10,9 +10,7 @@ class ExecutiveSummaryAgent:
         task,
         training_results,
         insights,
-        recommendations,
-        explainability_report,
-        semantic_schema
+        recommendations
 
     ):
 
@@ -23,112 +21,191 @@ class ExecutiveSummaryAgent:
         result = training_results[
                 "results"
             ][best_model]
-            
-        top_drivers = explainability_report.get(
-        "top_drivers",
-        []
-    )
 
-        importance = explainability_report.get(
-            "global_importance_percentages",
-            {}
-        )
+
         # top_features = result.get(
         #     "top_features",
         #     {}
         # )
 
+
+        insight_list = insights.get(
+            "insights",
+            []
+        )
+
+        recommendation_list = recommendations.get(
+            "recommendations",
+            []
+        )
+
+        opportunity_list = recommendations.get(
+            "opportunities",
+            []
+        )
+
+        risk_list = recommendations.get(
+            "risks",
+            []
+        )
+
+        quick_wins = recommendations.get(
+            "quick_wins",
+            []
+        )
+
+
         prompt = f"""
 
-You are a senior data analyst.
+You are a senior analytics consultant preparing an executive report.
 
-Target variable:
+Your job is to summarize the analytical findings.
+
+==================================================
+TASK
+==================================================
+
+{task}
+
+==================================================
+TARGET
+==================================================
 
 {target}
 
-TOP DRIVERS
-
-{top_drivers}
-
-IMPORTANCE
-
-{importance}
+==================================================
+MODEL
+==================================================
 
 Model Used:
-
 {best_model}
 
-Model Metrics:
-
+Metrics:
 {result}
 
-Feature Information:
+==================================================
+INSIGHTS
+==================================================
 
-{semantic_schema}
+{insight_list}
 
-Insights:
-{insights}
+==================================================
+RISKS
+==================================================
 
+{risk_list}
 
-Recommendations:
-{recommendations}
-IMPORTANT RULES
+==================================================
+RECOMMENDATIONS
+==================================================
 
-Use ONLY information provided.
+{recommendation_list}
 
-Never invent:
+==================================================
+OPPORTUNITIES
+==================================================
+
+{opportunity_list}
+
+==================================================
+QUICK WINS
+==================================================
+
+{quick_wins}
+
+==================================================
+STRICT RULES
+==================================================
+
+Use ONLY information explicitly provided above.
+
+Do NOT create:
 
 - thresholds
-- customer segments
+- customer groups
+- segment descriptions
 - monetary values
+- percentages
 - business rules
 - domain assumptions
+- causal explanations
 
-If a threshold is not explicitly present
-in Insights or Recommendations,
-do not create one.
+Do NOT infer anything from:
 
-If evidence is unavailable,
-say:
+- feature names
+- correlations
+- model importance
+
+Do NOT create:
+
+- new insights
+- new recommendations
+- new risks
+- new opportunities
+
+If information is not available,
+write:
 
 "Evidence not available."
 
-Do not create explanations from
-feature names alone.
-
-Do not infer causation from
-correlation.
-
-Do not recommend:
-
-- model tuning
-- feature engineering
-- retraining
-- reviewing feature importance
-- collecting more data
-
-unless explicitly present in recommendations.
-
-Every recommendation must originate from:
-Recommendations section.
-
-Every business insight must originate from:
-Insights section.
-
-Create a report using ONLY the supplied:
+Every statement in the report must originate from:
 
 - Metrics
 - Insights
+- Risks
 - Recommendations
+- Opportunities
+- Quick Wins
 
-Do not create new insights.
-Do not create new recommendations.
-Do not create new risks.
+Do not introduce any new facts.
 
-Only organize and summarize
-the provided information.
+Do not recommend:
 
-Keep response concise and professional.
+- feature engineering
+- retraining
+- model tuning
+- collecting more data
+- reviewing feature importance
+
+unless explicitly present in Recommendations.
+
+==================================================
+OUTPUT FORMAT
+==================================================
+
+## Model Performance Summary
+
+Briefly summarize model performance using only the provided metrics.
+
+## Key Drivers
+
+List the most important drivers mentioned in the insights.
+
+## Business Insights
+
+Summarize only the business insights provided.
+
+## Risks / Limitations
+
+Use ONLY the provided risks.
+
+If no risks exist, write:
+
+"No major analytical risks identified."
+
+## Recommendations
+
+List only the provided recommendations.
+
+## Opportunities
+
+List only the provided opportunities.
+
+## Quick Wins
+
+List only the provided quick wins.
+
+Keep the report concise, professional, and executive-friendly.
 
 """
 

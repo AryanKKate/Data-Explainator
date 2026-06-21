@@ -352,12 +352,7 @@ def executive_summary_node(state):
 
         insights=state["insights"],
 
-        recommendations=state["recommendations"],
-
-        explainability_report=
-        state["explainability_report"],
-
-        semantic_schema=state["semantic_schema"]
+        recommendations=state["recommendations"]
 
     )
 

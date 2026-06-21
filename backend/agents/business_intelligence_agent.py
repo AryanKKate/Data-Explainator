@@ -7,7 +7,7 @@ from analyzers.insight_translator import InsightTranslator
 
 
 class BusinessIntelligenceAgent:
-
+    
     @staticmethod
     def generate(
 
@@ -108,7 +108,9 @@ class BusinessIntelligenceAgent:
             )
 
         }
-
+        print(translated_insights)
+        print("========================================")
+        print(segments)
         return {
 
             "statistical_findings":
