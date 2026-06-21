@@ -243,6 +243,25 @@ TOP MODEL DRIVERS
 
 ----------------------------------------
 
+CRITICAL:
+
+Features are explanatory variables.
+
+A feature being important DOES NOT imply
+it should be increased, decreased,
+optimized, invested in, or targeted.
+
+Never generate recommendations of the form:
+
+- Increase X
+- Reduce X
+- Invest in X
+- Improve X
+- Optimize X
+
+unless the evidence explicitly states
+that such an action is possible.
+
 Generate:
 
 1. 5 Recommendations
@@ -283,11 +302,10 @@ Otherwise return:
 
 Quick Wins:
 
-- Must reference specific features.
-- Must be supported by evidence.
-- Must never mention model engineering.
-- Must never suggest collecting more data.
-- Must never suggest feature engineering.
+- Must reference evidence.
+- Do not assume a feature can be changed.
+- Focus on monitoring, prioritization,
+  segmentation, investigation, or review.
 
 Return concise bullet style output.
 

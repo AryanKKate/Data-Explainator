@@ -21,13 +21,22 @@ class ExecutiveSummaryAgent:
         ]
 
         result = training_results[
-            "results"
-        ][best_model]
+                "results"
+            ][best_model]
+            
+        top_drivers = explainability_report.get(
+        "top_drivers",
+        []
+    )
 
-        top_features = result.get(
-            "top_features",
+        importance = explainability_report.get(
+            "global_importance_percentages",
             {}
         )
+        # top_features = result.get(
+        #     "top_features",
+        #     {}
+        # )
 
         prompt = f"""
 
@@ -36,6 +45,14 @@ You are a senior data analyst.
 Target variable:
 
 {target}
+
+TOP DRIVERS
+
+{top_drivers}
+
+IMPORTANCE
+
+{importance}
 
 Model Used:
 
@@ -52,24 +69,64 @@ Feature Information:
 Insights:
 {insights}
 
-Top Features:
-
-{top_features}
 
 Recommendations:
 {recommendations}
+IMPORTANT RULES
 
-Generate:
+Use ONLY information provided.
 
-1. Model performance summary
+Never invent:
 
-2. Key drivers
+- thresholds
+- customer segments
+- monetary values
+- business rules
+- domain assumptions
 
-3. Business insights
+If a threshold is not explicitly present
+in Insights or Recommendations,
+do not create one.
 
-4. Risks / limitations
+If evidence is unavailable,
+say:
 
-5. Recommendations
+"Evidence not available."
+
+Do not create explanations from
+feature names alone.
+
+Do not infer causation from
+correlation.
+
+Do not recommend:
+
+- model tuning
+- feature engineering
+- retraining
+- reviewing feature importance
+- collecting more data
+
+unless explicitly present in recommendations.
+
+Every recommendation must originate from:
+Recommendations section.
+
+Every business insight must originate from:
+Insights section.
+
+Create a report using ONLY the supplied:
+
+- Metrics
+- Insights
+- Recommendations
+
+Do not create new insights.
+Do not create new recommendations.
+Do not create new risks.
+
+Only organize and summarize
+the provided information.
 
 Keep response concise and professional.
 

@@ -81,6 +81,16 @@ class OpportunityAnalyzer:
                     100
                 )
             )
+            effect_strength = "weak"
+
+            if abs(correlation) >= 0.5:
+                effect_strength = "strong"
+
+            elif abs(correlation) >= 0.3:
+                effect_strength = "moderate"
+
+            elif abs(correlation) >= 0.1:
+                effect_strength = "weak"
 
             opportunities.append({
 
@@ -92,6 +102,8 @@ class OpportunityAnalyzer:
                     correlation,
                     3
                 ),
+                "effect_strength":
+                 effect_strength,
 
                 "direction":
                 direction,

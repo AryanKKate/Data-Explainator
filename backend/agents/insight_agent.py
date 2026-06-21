@@ -25,37 +25,19 @@ class InsightAgent:
 
         )
 
-        positive_factors = explainability_report.get(
-            "most_positive_factors",
-            []
-        )
+        # positive_factors = explainability_report.get(
+        #     "most_positive_factors",
+        #     []
+        # )
 
-        negative_factors = explainability_report.get(
-            "most_negative_factors",
-            []
-        )
+        # negative_factors = explainability_report.get(
+        #     "most_negative_factors",
+        #     []
+        # )
 
         for feature, pct in list(
             importance.items()
         )[:5]:
-
-            if feature in positive_factors:
-
-                direction = (
-                    f"Increases {target}"
-                )
-
-            elif feature in negative_factors:
-
-                direction = (
-                    f"Reduces {target}"
-                )
-
-            else:
-
-                direction = (
-                    "Strong predictor"
-                )
 
             insights.append({
 
@@ -66,7 +48,10 @@ class InsightAgent:
                 feature,
 
                 "evidence":
-                f"{direction} • {pct}% importance",
+                (
+                    f"Explains {pct}% "
+                    f"of model behavior"
+                ),
 
                 "confidence":
                 round(
@@ -108,17 +93,19 @@ class InsightAgent:
                 "headline":
                 item["feature"],
 
-                "evidence":
-                (
-                    f"{relationship} relationship "
-                    f"(corr={item['correlation']})"
+                "evidence" : (
+
+                    f"{relationship} association "
+
+                    f"(correlation = "
+
+                    f"{item['correlation']})"
+
                 ),
 
-                "confidence":
-                round(
-                    max(
-                        0.5,
-                        1 - item["p_value"]
+                "confidence" :round(
+                    abs(
+                        item["correlation"]
                     ),
                     2
                 )
@@ -145,23 +132,35 @@ class InsightAgent:
 
         if len(segments) > 0:
 
-            best_segment = segments[0]
+            best_segment = (
+                business_intelligence
+                .get(
+                    "segments",
+                    {}
+                )
+                .get(
+                    "best_segment",
+                    None
+                )
+            )
 
-            insights.append({
+            if best_segment:
 
-                "type":
-                "segment",
+                insights.append({
 
-                "headline":
-                f"{best_segment['segment']} is highest value",
+                    "type":
+                    "segment",
 
-                "evidence":
-                f"{best_segment['uplift_pct']}% above average",
+                    "headline":
+                    f"{best_segment['segment']} is highest value",
 
-                "confidence":
-                0.9
+                    "evidence":
+                    f"{best_segment['uplift_pct']}% above average",
 
-            })
+                    "confidence":
+                    0.9
+
+                })
 
         # =====================================
         # Data Quality

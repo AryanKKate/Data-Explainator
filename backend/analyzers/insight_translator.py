@@ -44,9 +44,12 @@ class InsightTranslator:
                 None
             )
 
-            importance = item.get(
-                "importance",
-                0
+            importance = importance_scores.get(
+                feature,
+                item.get(
+                    "importance",
+                    0
+                )
             )
 
             priority = item.get(
@@ -60,67 +63,75 @@ class InsightTranslator:
             )
 
             # ===================================
-            # Relationship description
+            # Relationship
             # ===================================
 
             if correlation is not None:
 
-                if correlation > 0.1:
+                if correlation > 0:
 
-                    relationship = (
-                        "higher values are associated with higher target values"
-                    )
+                    relationship = "positive"
 
-                elif correlation < -0.1:
+                elif correlation < 0:
 
-                    relationship = (
-                        "higher values are associated with lower target values"
-                    )
+                    relationship = "negative"
 
                 else:
 
-                    relationship = (
-                        "shows weak relationship with the target"
-                    )
+                    relationship = "neutral"
+
+                abs_corr = abs(
+                    correlation
+                )
+
+                if abs_corr >= 0.60:
+
+                    strength = "strong"
+
+                elif abs_corr >= 0.30:
+
+                    strength = "moderate"
+
+                else:
+
+                    strength = "weak"
 
             else:
 
-                relationship = (
-                    "is an influential predictor"
+                relationship = "unknown"
+
+                strength = "unknown"
+
+            # ===================================
+            # Business Finding
+            # ===================================
+
+            if correlation is not None:
+
+                finding = (
+
+                    f"{feature} explains "
+                    f"{round(importance,2)}% "
+                    f"of model behavior and "
+                    f"shows a {strength} "
+                    f"{relationship} relationship "
+                    f"with the target"
+
+                )
+
+            else:
+
+                finding = (
+
+                    f"{feature} explains "
+                    f"{round(importance,2)}% "
+                    f"of model behavior"
+
                 )
 
             # ===================================
-            # Actionability
+            # Dataset-Agnostic
             # ===================================
-
-            actionable = False
-
-            feature_lower = str(
-                feature
-            ).lower()
-
-            actionable_keywords = [
-
-                "contract",
-                "discount",
-                "promotion",
-                "price",
-                "marketing",
-                "support",
-                "service",
-                "billing",
-                "security",
-                "plan",
-                "subscription"
-
-            ]
-
-            for keyword in actionable_keywords:
-
-                if keyword in feature_lower:
-
-                    actionable = True
-                    break
 
             translated.append({
 
@@ -128,7 +139,7 @@ class InsightTranslator:
                 feature,
 
                 "finding":
-                f"{feature} {relationship}",
+                finding,
 
                 "importance":
                 round(
@@ -145,9 +156,27 @@ class InsightTranslator:
                 "direction":
                 direction,
 
+                "correlation":
+                correlation,
+
+                "relationship":
+                relationship,
+
+                "strength":
+                strength,
+
                 "actionable":
-                actionable
+                False
 
             })
 
-        return translated
+        return sorted(
+
+            translated,
+
+            key=lambda x:
+            x["priority_score"],
+
+            reverse=True
+
+        )
