@@ -6,6 +6,18 @@ class InsightAgent:
         business_intelligence
     ):
 
+        segment_data = (
+            business_intelligence
+            .get("segments", {})
+            .get("segments", [])
+        )
+
+        best_segment = (
+            business_intelligence
+            .get("segments", {})
+            .get("best_segment")
+        )
+
         observations = []
 
         for insight in ranked_insights[:10]:
@@ -196,21 +208,18 @@ class InsightAgent:
         target
 
     ):
+        segment_container = business_intelligence.get(
+            "segments",
+            {}
+        )
+
+        best_segment = segment_container.get(
+            "best_segment"
+        )
 
         insights = []
 
-        # =====================================
-        # SHAP Drivers
-        # =====================================
 
-        importance = (
-
-            explainability_report.get(
-                "global_importance_percentages",
-                {}
-            )
-
-        )
 
         # positive_factors = explainability_report.get(
         #     "most_positive_factors",
@@ -221,166 +230,41 @@ class InsightAgent:
         #     "most_negative_factors",
         #     []
         # )
+        observations = (
 
-        for feature, pct in list(
-            importance.items()
-        )[:5]:
+        business_intelligence.get(
+            "business_observations",
+            []
+        )
+
+)
+
+        for obs in observations:
 
             insights.append({
 
-                "type":
-                "driver",
+                "type":"segment",
 
                 "headline":
-                feature,
+                f"{best_segment['segment_name']}",
 
                 "evidence":
-                (
-                    f"Explains {pct}% "
-                    f"of model behavior"
-                ),
+                f"{best_segment['uplift_pct']}% above average",
+
+                "uplift_pct":
+                best_segment["uplift_pct"],
+
+                "records":
+                best_segment["records"],
 
                 "confidence":
-                round(
-                    pct / 100,
-                    2
-                ),
-
-                "score":
-                float(pct)
+                0.9
 
             })
 
-        # =====================================
-        # Statistical Opportunities
-        # =====================================
 
-        statistical_findings = (
 
-            business_intelligence
-            .get(
-                "statistical_findings",
-                {}
-            )
-            .get(
-                "driver_analysis",
-                []
-            )
 
-        )
-
-        for item in statistical_findings[:5]:
-
-            relationship = item[
-                "relationship"
-            ]
-
-            corr_strength = abs(
-                item["correlation"]
-            )
-
-            insights.append({
-
-                "type":
-                "relationship",
-
-                "headline":
-                item["feature"],
-
-                "evidence":
-                (
-                    f"{relationship} association "
-                    f"(correlation = "
-                    f"{item['correlation']})"
-                ),
-
-                "confidence":
-                round(
-                    corr_strength,
-                    2
-                ),
-
-                "score":
-                round(
-                    corr_strength * 100,
-                    2
-                )
-
-            })
-
-        # =====================================
-        # Best Segment
-        # =====================================
-
-        segments = (
-
-            business_intelligence
-            .get(
-                "segments",
-                {}
-            )
-            .get(
-                "segments",
-                []
-            )
-
-        )
-
-        if len(segments) > 0:
-
-            best_segment = (
-                business_intelligence
-                .get(
-                    "segments",
-                    {}
-                )
-                .get(
-                    "best_segment",
-                    None
-                )
-            )
-
-            if best_segment:
-
-                segment_score = (
-
-                    abs(
-                        best_segment["uplift_pct"]
-                    )
-
-                    +
-
-                    best_segment["percentage"] * 0.3
-
-                )
-
-                insights.append({
-
-                    "type":
-                    "segment",
-
-                    "headline":
-                    (
-                        f"High-value segment: "
-                        f"{best_segment['segment_name']}"
-                    ),
-
-                    "evidence":
-                    (
-                        f"{best_segment['uplift_pct']}% "
-                        f"above average"
-                    ),
-
-                    "confidence":
-                    0.9,
-
-                    "score":
-                    round(
-                        segment_score,
-                        2
-                    )
-
-                })
 
         # =====================================
         # Data Quality

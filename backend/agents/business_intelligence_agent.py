@@ -4,6 +4,7 @@ from analyzers.opportunity_analyzer import OpportunityAnalyzer
 from analyzers.trust_score_analyzer import TrustScoreAnalyzer
 from analyzers.data_quality_analyzer import DataQualityAnalyzer
 from analyzers.insight_translator import InsightTranslator
+from analyzers.observation_generator import ObservationGenerator    
 
 
 class BusinessIntelligenceAgent:
@@ -70,6 +71,26 @@ class BusinessIntelligenceAgent:
 
         )
 
+        observations = (
+
+            ObservationGenerator.analyze(
+
+                target=target,
+
+                stats=stats,
+
+                segments=segments,
+
+                explainability_report=
+                explainability_report,
+
+                trust_score=
+                trust["trust_score"]
+
+            )
+
+        )
+
         
 
         quality = (
@@ -124,6 +145,9 @@ class BusinessIntelligenceAgent:
 
             "translated_insights":
             translated_insights,
+            
+            "business_observations":
+            observations,
 
             "trust_score":
             trust,

@@ -25,7 +25,8 @@ class RecommendationAgent:
         training_results,
         explainability_report,
         business_intelligence,
-        query
+        query,
+        insights
 
     ):
 
@@ -76,9 +77,12 @@ class RecommendationAgent:
                 []
             )
         )
+        business_observations = insights.get(
+            "business_observations",
+            []
+        )
 
 
-        evidence = []
 
 
 
@@ -170,6 +174,8 @@ IMPORTANT RULES:
 - Recommendations must be supported by metrics.
 
 ----------------------------------------
+OBSERVATIONS
+{business_observations}
 
 TASK
 
@@ -196,16 +202,28 @@ Data Quality Score:
 {data_quality}
 
 ----------------------------------------
+BUSINESS OBSERVATIONS
 
-TRANSLATED BUSINESS INSIGHTS
-
-{evidence}
+{business_observations}
 
 IMPORTANT:
 
-- Never recommend increasing feature importance.
-- Never recommend modifying model features.
-- Never recommend improving a variable unless it is marked actionable=True.
+IMPORTANT
+
+Use business observations as the
+primary evidence source.
+
+Recommendations should focus on:
+
+- monitoring
+- prioritization
+- segmentation
+- investigation
+- resource allocation
+- risk mitigation
+
+Do not recommend changing variables
+unless evidence explicitly supports it.
 - Use actionable=False items only as supporting evidence.
 - Recommendations must focus on business decisions, not machine learning features.
 - If no actionable opportunities exist, provide strategic monitoring recommendations instead.

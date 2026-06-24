@@ -52,7 +52,7 @@ class GraphState(TypedDict):
 
     explainability_report: dict
 
-    insights: list
+    insights: dict
 
     recommendations: list
 
@@ -325,7 +325,10 @@ def recommendation_node(state):
             state["business_intelligence"],
 
             query=
-            state["user_query"]
+            state["user_query"],
+
+            insights=
+            state["insights"]
 
 
         )
