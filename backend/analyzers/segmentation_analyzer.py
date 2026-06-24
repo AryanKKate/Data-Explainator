@@ -215,19 +215,19 @@ class SegmentationAnalyzer:
                 )
             )
 
-            segments = sorted(
+        segments = sorted(
                 segments,
                 key=lambda x: x["avg_target"],
                 reverse=True
             )
 
-            best_segment = (
+        best_segment = (
                 segments[0]
                 if segments
                 else None
             )
 
-            segments.append({
+        segments.append({
 
                 "segment":
                 f"Cluster {cluster}",

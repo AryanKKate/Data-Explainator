@@ -29,17 +29,19 @@ class ObservationGenerator:
 
             observations.append({
 
-                "type":
-                "segment",
+                "type":"segment",
 
-                "observation":
-                (
-                    f"A segment representing "
-                    f"{best_segment['percentage']}% "
-                    f"of records achieves "
-                    f"{uplift}% higher "
-                    f"{target} than average."
-                ),
+                "segment_name":
+                best_segment["segment_name"],
+
+                "uplift_pct":
+                uplift,
+
+                "records":
+                best_segment["records"],
+
+                "percentage":
+                best_segment["percentage"],
 
                 "score":
                 abs(uplift)
@@ -64,28 +66,26 @@ class ObservationGenerator:
             if corr < 0.3:
                 continue
 
-            observations.append({
+                observations.append({
 
-                "type":
-                "relationship",
+                    "type":"relationship",
 
-                "observation":
-                (
-                    f"{item['feature']} "
-                    f"shows a "
-                    f"{item['strength']} "
-                    f"{item['relationship']} "
-                    f"association with "
-                    f"{target}."
-                ),
+                    "feature":
+                    item["feature"],
 
-                "score":
-                round(
-                    corr * 100,
-                    2
-                )
+                    "relationship":
+                    item["relationship"],
 
-            })
+                    "strength":
+                    item["strength"],
+
+                    "correlation":
+                    item["correlation"],
+
+                    "score":
+                    abs(corr) * 100
+
+                })
 
         # =====================================
         # Driver Observations
@@ -118,18 +118,16 @@ class ObservationGenerator:
 
             observations.append({
 
-                "type":
-                "driver",
+                "type":"driver",
 
-                "observation":
-                (
-                    f"{feature} is among "
-                    f"the strongest drivers "
-                    f"of model predictions."
-                ),
+                "feature":
+                feature,
+
+                "importance":
+                score,
 
                 "score":
-                round(score, 2)
+                score
 
             })
 
@@ -141,14 +139,10 @@ class ObservationGenerator:
 
             observations.append({
 
-                "type":
-                "trust",
+                "type":"trust",
 
-                "observation":
-                (
-                    f"Prediction trust score "
-                    f"is {trust_score}/100."
-                ),
+                "trust_score":
+                trust_score,
 
                 "score":
                 trust_score * 0.2

@@ -1,203 +1,8 @@
+from analyzers.insight_ranker import InsightRanker
+from analyzers.insight_narrator import InsightNarrator
 class InsightAgent:
 
-    @staticmethod
-    def build_business_observations(
-        ranked_insights,
-        business_intelligence
-    ):
 
-        segment_data = (
-            business_intelligence
-            .get("segments", {})
-            .get("segments", [])
-        )
-
-        best_segment = (
-            business_intelligence
-            .get("segments", {})
-            .get("best_segment")
-        )
-
-        observations = []
-
-        for insight in ranked_insights[:10]:
-
-            if insight["type"] == "relationship":
-
-                feature = insight["headline"]
-
-                direction = (
-                    "higher"
-                    if "positive" in insight["evidence"]
-                    else "lower"
-                )
-
-                observations.append(
-
-                    f"{feature} is associated with "
-                    f"{direction} {business_intelligence['target']}."
-
-                )
-
-            elif insight["type"] == "driver":
-
-                observations.append(
-
-                    f"{insight['headline']} is one of the "
-                    f"strongest drivers of model predictions."
-
-                )
-
-            elif insight["type"] == "segment":
-
-                observations.append(
-
-                    f"{insight['headline']} "
-                    f"shows {insight['evidence']}."
-
-                )
-
-        return observations
-    @staticmethod
-    def narrate(insights):
-
-        narratives = []
-
-        for item in insights[:5]:
-
-            if item["type"] == "relationship":
-
-                narratives.append(
-
-                    f"{item['headline']} shows "
-                    f"{item['evidence']}."
-
-                )
-
-            elif item["type"] == "driver":
-
-                narratives.append(
-
-                    f"{item['headline']} is one "
-                    f"of the strongest model drivers."
-
-                )
-
-            elif item["type"] == "segment":
-
-                narratives.append(
-
-                    f"{item['headline']} "
-                    f"with {item['evidence']}."
-
-                )
-
-            elif item["type"] == "model":
-
-                narratives.append(
-
-                    f"The model achieved "
-                    f"{item['evidence']}."
-
-                )
-
-            elif item["type"] == "quality":
-
-                narratives.append(
-
-                    f"Data quality remains high "
-                    f"at {item['evidence']}."
-
-                )
-
-            elif item["type"] == "trust":
-
-                narratives.append(
-
-                    f"Prediction trust score is "
-                    f"{item['evidence']}."
-
-                )
-
-        return narratives
-
-    @staticmethod
-    def rank_insights(insights):
-
-        for insight in insights:
-
-            score = 0
-
-            if insight["type"] == "relationship":
-
-                score = (
-                    insight["confidence"] * 100
-                )
-
-            elif insight["type"] == "segment":
-
-                uplift = float(
-                    insight["evidence"]
-                    .split("%")[0]
-                )
-
-                score = abs(uplift)
-
-            elif insight["type"] == "driver":
-
-                try:
-
-                    score = float(
-                        insight["evidence"]
-                        .split("Explains ")[1]
-                        .split("%")[0]
-                    )
-
-                except:
-                    score = 0
-
-            elif insight["type"] == "model":
-
-                score = (
-                    insight["confidence"] * 40
-                )
-
-            elif insight["type"] == "quality":
-
-                score = (
-                    insight["confidence"] * 20
-                )
-
-            elif insight["type"] == "trust":
-
-                score = (
-                    insight["confidence"] * 20
-                )
-
-            insight["score"] = round(
-                score,
-                2
-            )
-
-        insights = sorted(
-
-            insights,
-
-            key=lambda x:
-            x["score"],
-
-            reverse=True
-
-        )
-
-        for rank, item in enumerate(
-            insights,
-            start=1
-        ):
-
-            item["rank"] = rank
-
-        return insights
 
     @staticmethod
     def generate(
@@ -230,37 +35,118 @@ class InsightAgent:
         #     "most_negative_factors",
         #     []
         # )
+
+
         observations = (
 
-        business_intelligence.get(
-            "business_observations",
-            []
-        )
+            business_intelligence.get(
+                "business_observations",
+                []
+            )
 
-)
+        )
 
         for obs in observations:
 
-            insights.append({
+            if obs["type"] == "relationship":
 
-                "type":"segment",
+                insights.append({
 
-                "headline":
-                f"{best_segment['segment_name']}",
+                    "type":
+                    "relationship",
 
-                "evidence":
-                f"{best_segment['uplift_pct']}% above average",
+                    "headline":
+                    obs["feature"],
 
-                "uplift_pct":
-                best_segment["uplift_pct"],
+                    "evidence":
+                    (
+                        f"{obs['relationship']} association "
+                        f"(correlation = {obs['correlation']})"
+                    ),
 
-                "records":
-                best_segment["records"],
+                    "confidence":
+                    abs(obs["correlation"]),
 
-                "confidence":
-                0.9
+                    "score":
+                    obs["score"]
 
-            })
+                })
+
+            elif obs["type"] == "driver":
+
+                insights.append({
+
+                    "type":
+                    "driver",
+
+                    "headline":
+                    obs["feature"],
+
+                    "evidence":
+                    (
+                        f"Explains "
+                        f"{round(obs['importance'],2)}% "
+                        f"of model behavior"
+                    ),
+
+                    "confidence":
+                    round(
+                        obs["importance"] / 100,
+                        2
+                    ),
+
+                    "score":
+                    obs["score"]
+
+                })
+
+            elif obs["type"] == "segment":
+
+                insights.append({
+
+                    "type":
+                    "segment",
+
+                    "headline":
+                    obs["segment_name"],
+
+                    "evidence":
+                    (
+                        f"{obs['uplift_pct']}% "
+                        f"above average"
+                    ),
+
+                    "confidence":
+                    0.9,
+
+                    "score":
+                    obs["score"]
+
+                })
+
+            elif obs["type"] == "trust":
+
+                insights.append({
+
+                    "type":
+                    "trust",
+
+                    "headline":
+                    "Prediction Trust Score",
+
+                    "evidence":
+                    f"{obs['trust_score']}/100",
+
+                    "confidence":
+                    round(
+                        obs["trust_score"] / 100,
+                        2
+                    ),
+
+                    "score":
+                    obs["score"]
+
+                })
 
 
 
@@ -400,33 +286,32 @@ class InsightAgent:
 
 
 
+        ranked = InsightRanker.rank(
+            insights
+        )
+
         for rank, item in enumerate(
-            insights,
+
+            ranked,
+
             start=1
+
         ):
 
             item["rank"] = rank
 
-        ranked = InsightAgent.rank_insights(
-            insights
-        )
 
-        narratives = InsightAgent.narrate(
+
+
+        narratives = InsightNarrator.narrate(
             ranked
-        )
-
-        observations = (
-            InsightAgent.build_business_observations(
-                ranked,
-                business_intelligence
-            )
         )
 
         return {
 
             "top_insights": ranked[:10],
 
-            "narratives": narratives,
+            "narrated_insights": narratives,
 
             "business_observations": observations,
 
