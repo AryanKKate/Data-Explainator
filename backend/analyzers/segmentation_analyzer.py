@@ -215,19 +215,7 @@ class SegmentationAnalyzer:
                 )
             )
 
-        segments = sorted(
-                segments,
-                key=lambda x: x["avg_target"],
-                reverse=True
-            )
-
-        best_segment = (
-                segments[0]
-                if segments
-                else None
-            )
-
-        segments.append({
+            segments.append({
 
                 "segment":
                 f"Cluster {cluster}",
@@ -255,21 +243,29 @@ class SegmentationAnalyzer:
                 uplift,
 
                 "segment_summary": {
-                feature:
-                round(group[feature].mean(),2)
-                for feature in top_characteristics
-            },
+                    feature:
+                    round(group[feature].mean(), 2)
+                    for feature in top_characteristics
+                },
 
                 "segment_name":
                 segment_name,
                 "top_characteristics": 
                 top_characteristics
 
-
             })
 
+        segments = sorted(
+            segments,
+            key=lambda x: x["avg_target"],
+            reverse=True
+        )
 
-
+        best_segment = (
+            segments[0]
+            if segments
+            else None
+        )
 
         return {
 

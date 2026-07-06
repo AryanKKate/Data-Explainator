@@ -143,7 +143,13 @@ class BusinessIntelligenceAgent:
             "opportunity_ranking":
             opportunities,
 
+            "opportunities":
+            opportunities,
+
             "translated_insights":
+            translated_insights,
+
+            "ranked_insights":
             translated_insights,
             
             "business_observations":

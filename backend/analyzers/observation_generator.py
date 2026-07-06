@@ -66,26 +66,26 @@ class ObservationGenerator:
             if corr < 0.3:
                 continue
 
-                observations.append({
+            observations.append({
 
-                    "type":"relationship",
+                "type":"relationship",
 
-                    "feature":
-                    item["feature"],
+                "feature":
+                item["feature"],
 
-                    "relationship":
-                    item["relationship"],
+                "relationship":
+                item["relationship"],
 
-                    "strength":
-                    item["strength"],
+                "strength":
+                item["strength"],
 
-                    "correlation":
-                    item["correlation"],
+                "correlation":
+                item["correlation"],
 
-                    "score":
-                    abs(corr) * 100
+                "score":
+                abs(corr) * 100
 
-                })
+            })
 
         # =====================================
         # Driver Observations

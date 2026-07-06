@@ -68,41 +68,107 @@ class RecommendationAgent:
         )
 
         # =====================================
-        # Opportunities
+        # Evidence sources
         # =====================================
 
-        business_observations = (
+        business_observations = insights.get(
+            "business_observations",
             business_intelligence.get(
                 "business_observations",
                 []
             )
         )
-        business_observations = insights.get(
-            "business_observations",
+
+        translated_insights = business_intelligence.get(
+            "translated_insights",
             []
         )
 
-
-
-
-
-        # =====================================
-        # Segments
-        # =====================================
-
-        segment_data = (
-
-            business_intelligence
-            .get(
-                "segments",
-                {}
-            )
-            .get(
-                "segments",
+        opportunities = business_intelligence.get(
+            "opportunities",
+            business_intelligence.get(
+                "opportunity_ranking",
                 []
             )
-
         )
+
+        ranked_insights = business_intelligence.get(
+            "ranked_insights",
+            translated_insights[:10]
+        )
+
+        segment_container = business_intelligence.get(
+            "segments",
+            {}
+        )
+
+        segment_data = segment_container.get(
+            "segments",
+            []
+        )
+
+        best_segment = segment_container.get(
+            "best_segment")
+
+
+
+
+
+        segment_summary = "- None"
+        if best_segment:
+            segment_summary = (
+                f"- {best_segment.get('segment_name', 'best segment')} "
+                f"(uplift_pct={best_segment.get('uplift_pct')}, "
+                f"records={best_segment.get('records')})"
+            )
+
+        def format_entries(records):
+            if not records:
+                return "- None"
+            lines = []
+            for item in records:
+                if isinstance(item, str):
+                    lines.append(f"- {item}")
+                    continue
+                if isinstance(item, dict):
+                    if "finding" in item:
+                        summary = item["finding"]
+                    elif "headline" in item:
+                        summary = item["headline"]
+                    elif "feature" in item:
+                        summary = item["feature"]
+                    elif "segment_name" in item:
+                        summary = item["segment_name"]
+                    else:
+                        summary = str(item)
+                    meta = []
+                    for key in [
+                        "priority_score",
+                        "importance",
+                        "correlation",
+                        "uplift_pct",
+                        "trust_score",
+                        "score",
+                        "direction"
+                    ]:
+                        if key in item:
+                            meta.append(f"{key}={item[key]}")
+                    lines.append(
+                        f"- {summary}"
+                        + (
+                            f" ({', '.join(meta)})"
+                            if meta else ""
+                        )
+                    )
+                    continue
+                lines.append(f"- {item}")
+            return "\n".join(lines)
+
+        query_text = query or "[no user query provided]"
+        business_observations_text = format_entries(business_observations)
+        translated_insights_text = format_entries(translated_insights[:5])
+        opportunities_text = format_entries(opportunities[:5])
+        ranked_insights_text = format_entries(ranked_insights[:5])
 
         # =====================================
         # Trust
@@ -140,19 +206,6 @@ class RecommendationAgent:
 
         )
 
-        ranked_insights = (
-            business_intelligence.get(
-                "ranked_insights",
-                []
-            )
-        )
-        opportunities = (
-        business_intelligence.get(
-            "opportunities",
-            []
-        )
-    )
-
         # =====================================
         # Prompt
         # =====================================
@@ -161,7 +214,8 @@ class RecommendationAgent:
 
 You are a Senior Analytics Consultant.
 
-Your job is to generate executive business recommendations based on user query{query} and the results of a comprehensive data analysis
+Your job is to generate executive business recommendations based on the user query:
+"{query_text}" and the results of a comprehensive data analysis.
 
 IMPORTANT RULES:
 
@@ -172,21 +226,20 @@ IMPORTANT RULES:
   patients, employees, etc unless present in evidence.
 - Recommendations must be data-driven.
 - Recommendations must be supported by metrics.
+- Make sure recommendations respond directly to the user query.
 
 ----------------------------------------
-OBSERVATIONS
-{business_observations}
+BUSINESS CONTEXT
+User Query:
+{query_text}
 
-TASK
-
+Task:
 {task}
 
-TARGET
-
+Target:
 {target}
 
 ----------------------------------------
-
 MODEL
 
 Best Model:
@@ -204,7 +257,23 @@ Data Quality Score:
 ----------------------------------------
 BUSINESS OBSERVATIONS
 
-{business_observations}
+{business_observations_text}
+
+TRANSLATED INSIGHTS
+
+{translated_insights_text}
+
+TOP RANKED INSIGHTS
+
+{ranked_insights_text}
+
+TOP OPPORTUNITIES
+
+{opportunities_text}
+
+SEGMENT SUMMARY
+
+{segment_summary}
 
 IMPORTANT:
 
@@ -226,21 +295,26 @@ Do not recommend changing variables
 unless evidence explicitly supports it.
 - Use actionable=False items only as supporting evidence.
 - Recommendations must focus on business decisions, not machine learning features.
+- Use feature-level evidence only to support business actions.
 - If no actionable opportunities exist, provide strategic monitoring recommendations instead.
 
 ----------------------------------------
+EVIDENCE SUMMARY
 
-SEGMENTS
+Business Observations:
+{business_observations_text}
 
-{segment_data}
+Translated Insights:
+{translated_insights_text}
 
-TOP RANKED INSIGHTS
+Top Ranked Insights:
+{ranked_insights_text}
 
-{ranked_insights[:10]}
+Top Opportunities:
+{opportunities_text}
 
-RANKED OPPORTUNITIES
-
-{opportunities}
+Segment Summary:
+{segment_summary}
 
 ----------------------------------------
 

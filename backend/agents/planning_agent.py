@@ -23,24 +23,21 @@ Task:
 
 {task}
 
-Rules:
+Return a single JSON object with a key named "steps".
+The value of "steps" must be a JSON array of strings.
+Do not include any text outside the JSON object.
 
-- Classification:
-    encoding
-    scaling
-    smote (if imbalance exists)
+Mapping rules:
+- classification -> ["encoding", "scaling", "smote (if imbalance exists)"]
+- regression -> ["encoding", "scaling"]
+- forecasting -> ["date_features"]
+- exploratory_analysis -> ["encoding", "scaling"]
+- clustering -> ["encoding", "scaling"]
 
-- Regression:
-    encoding
-    scaling
+If the task is unknown, return ["encoding", "scaling"].
 
-- Forecasting:
-    date_features
-
-- PCA:
-    only if feature count > 8
-
-Return steps only
+Example output:
+{{"steps": ["encoding", "scaling"]}}
 
 """
 
